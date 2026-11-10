@@ -9,3 +9,7 @@ coverage/
 *.tsbuildinfo
 .vite/
 apps/api/data/
+
+# Local deployment, copied from docker-compose.example.yml
+docker-compose.yml
+docker-compose.override.yml

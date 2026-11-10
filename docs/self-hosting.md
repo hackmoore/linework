@@ -18,6 +18,7 @@ HTTPS matters. Browsers only allow the encryption that live collaboration uses o
 
 ```sh
 git clone <your fork or this repo> linework && cd linework
+cp docker-compose.example.yml docker-compose.yml
 cp .env.example .env
 # Edit .env: set LINEWORK_SITE_ADDRESS and LINEWORK_SITE_URL to your domain.
 docker compose up -d --build
@@ -42,7 +43,7 @@ LINEWORK_SITE_URL=https://linework.example.com
 HTTP_PORT=8080
 ```
 
-Remove the two `443` port lines from `docker-compose.yml`, then proxy your domain to `http://127.0.0.1:8080`. The proxy must pass WebSocket upgrades on `/api/`. For nginx:
+Remove the two `443` port lines from your `docker-compose.yml`, then proxy your domain to `http://127.0.0.1:8080`. The proxy must pass WebSocket upgrades on `/api/`. For nginx:
 
 ```nginx
 location / {
@@ -65,6 +66,8 @@ location / {
 | `HTTPS_PORT`            | Host port for HTTPS. Default 443.                                                                                |
 
 Changing `LINEWORK_SITE_URL` needs a rebuild: `docker compose up -d --build`.
+
+Your `docker-compose.yml` and `.env` are not tracked by git, so edit them freely. After pulling an update, compare your copy with `docker-compose.example.yml` for new settings.
 
 ## Updating
 

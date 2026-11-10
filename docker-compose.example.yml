@@ -1,5 +1,9 @@
-# Linework on a single server. Copy .env.example to .env, edit it, then:
+# Sample Compose file for running Linework on a single server.
+# Copy it and the sample settings, edit them, then start:
+#   cp docker-compose.example.yml docker-compose.yml
+#   cp .env.example .env
 #   docker compose up -d --build
+# docker-compose.yml and .env are git-ignored, so local changes stay out of the repo.
 # See docs/self-hosting.md.
 
 services:
