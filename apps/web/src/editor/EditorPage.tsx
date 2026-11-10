@@ -6,6 +6,8 @@ import { GanttEditor } from "../gantt/GanttEditor";
 import { GanttInspector } from "../gantt/GanttInspector";
 import { KanbanEditor } from "../kanban/KanbanEditor";
 import { KanbanInspector } from "../kanban/KanbanInspector";
+import { RoadmapEditor } from "../roadmap/RoadmapEditor";
+import { RoadmapInspector } from "../roadmap/RoadmapInspector";
 import { Canvas } from "./Canvas";
 import { ExportMenu } from "./ExportMenu";
 import { LiveControls } from "../collab/LiveControls";
@@ -138,6 +140,13 @@ export function EditorPage(): ReactElement {
           <GanttEditor />
           <SidePanel newCommentPoint={() => ({ x: 0, y: 0 })}>
             <GanttInspector />
+          </SidePanel>
+        </div>
+      ) : chartType === "roadmap" ? (
+        <div className="editor__body">
+          <RoadmapEditor />
+          <SidePanel newCommentPoint={() => ({ x: 0, y: 0 })}>
+            <RoadmapInspector />
           </SidePanel>
         </div>
       ) : chartType === "kanban" ? (

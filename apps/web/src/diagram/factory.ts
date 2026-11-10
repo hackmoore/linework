@@ -135,6 +135,17 @@ export function createDiagram(
       ? { flowchart: { direction: "TB" as const, laneStart: 0, lanes: [] } }
       : {}),
     ...(chartType === "network" ? { network: { entities: [], links: [] } } : {}),
+    ...(chartType === "roadmap"
+      ? {
+          roadmap: {
+            scale: "month" as const,
+            fiscalYearStart: 1,
+            showToday: true,
+            lanes: [{ id: createId(), name: "Lane 1", color: "#1a56db", collapsed: false }],
+            items: [],
+          },
+        }
+      : {}),
     createdAt: now,
     updatedAt: now,
   };

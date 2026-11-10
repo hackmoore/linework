@@ -64,6 +64,40 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["card", "cards"],
   },
+  roadmap: {
+    id: "roadmap",
+    name: "Roadmap",
+    tagline: "Show what is planned when, by team or theme, at a glance.",
+    bestFor: [
+      "Product and technology roadmaps",
+      "Quarterly plans for leadership",
+      "Release and launch timelines",
+    ],
+    objects: [
+      { name: "Lane", description: "A row for a team, product area, theme or goal." },
+      {
+        name: "Item",
+        description: "A piece of work shown as a bar from its start to its end, with a status and owner.",
+      },
+      {
+        name: "Milestone",
+        description: "A single date that matters, such as a launch, a review or a deadline.",
+      },
+      {
+        name: "Status",
+        description:
+          "Planned items are outlined, in-progress items are solid, done items fade and at-risk items turn red.",
+      },
+    ],
+    tips: [
+      "Double-click a lane at a date to add an item there. Drag bars to move them, and drag their ends to change dates.",
+      "Drag a bar up or down to move it to another lane.",
+      "Zoom between weeks, months and quarters. Set the financial year in the panel to label quarters FY.",
+      "Keep item titles to outcomes people recognise, like 'Self-serve billing', not task names.",
+      "Need dependencies and day-by-day dates? Use a Gantt chart instead.",
+    ],
+    item: ["item", "items"],
+  },
   flowchart: {
     id: "flowchart",
     name: "Flowchart",
@@ -157,7 +191,14 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
 };
 
 /** Order shown in the chart type picker. */
-export const CHART_TYPE_ORDER: readonly ChartType[] = ["gantt", "kanban", "flowchart", "network", "freeform"];
+export const CHART_TYPE_ORDER: readonly ChartType[] = [
+  "gantt",
+  "roadmap",
+  "kanban",
+  "flowchart",
+  "network",
+  "freeform",
+];
 
 /** "1 task", "3 cards", "0 shapes". */
 export function countLabel(chartType: ChartType, count: number): string {

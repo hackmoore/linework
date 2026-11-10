@@ -15,6 +15,10 @@ import {
   type NetworkLink,
   type ShapeKind,
   ENTITY_TYPES,
+  ROADMAP_SCALES,
+  ROADMAP_STATUSES,
+  type RoadmapItem,
+  type RoadmapLane,
 } from "@linework/shared";
 import { createDiagram, createEdge, createNode } from "../diagram/factory";
 import { layeredLayout, withPositions } from "../editor/arrange";
@@ -24,6 +28,12 @@ import { createCard, createColumn, createLane } from "../kanban/model";
 import { tidyFlowchart } from "../flowchart/layout";
 import { layoutNetwork } from "../network/layout";
 import { createEntityNode } from "../network/model";
+import {
+  createRoadmapData,
+  createRoadmapItem,
+  createRoadmapLane,
+  DEFAULT_DAYS as ROADMAP_DAYS,
+} from "../roadmap/model";
 import { createFlowchartData, createFlowLane, DEFAULT_LANE_SIZE, flowNodeStyle } from "../flowchart/model";
 import { ICONS } from "../library/icons";
 import { boundsOf } from "../render/geometry";
@@ -200,7 +210,45 @@ const networkSchema = z.object({
     .optional(),
 });
 
-const specSchema = z.discriminatedUnion("type", [flowSchema, ganttSchema, kanbanSchema, networkSchema]);
+const roadmapSchema = z.object({
+  type: z.literal("roadmap"),
+  title: text(200).optional(),
+  style: z.enum(["professional", "sketch"]).optional(),
+  scale: z.enum(ROADMAP_SCALES).optional(),
+  /** Month the financial year starts, 1-12. */
+  fiscalYearStart: z.number().int().min(1).max(12).optional(),
+  lanes: z
+    .array(
+      z.object({
+        name: text(100),
+        color,
+        items: z
+          .array(
+            z.object({
+              title: text(200),
+              start: date,
+              end: date.optional(),
+              milestone: z.boolean().optional(),
+              status: z.enum(ROADMAP_STATUSES).optional(),
+              owner: text(100).optional(),
+              description: text(5_000).optional(),
+            }),
+          )
+          .max(1_000)
+          .optional(),
+      }),
+    )
+    .min(1)
+    .max(100),
+});
+
+const specSchema = z.discriminatedUnion("type", [
+  flowSchema,
+  ganttSchema,
+  kanbanSchema,
+  networkSchema,
+  roadmapSchema,
+]);
 export type SimpleSpec = z.input<typeof specSchema>;
 
 export type SpecResult = { ok: true; diagram: Diagram } | { ok: false; error: string };
@@ -218,6 +266,7 @@ export function parseSimpleSpec(input: unknown): SpecResult {
   if (spec.type === "gantt") return { ok: true, diagram: buildGantt(spec) };
   if (spec.type === "kanban") return buildKanban(spec);
   if (spec.type === "network") return buildNetwork(spec);
+  if (spec.type === "roadmap") return { ok: true, diagram: buildRoadmap(spec) };
   return buildFlow(spec);
 }
 
@@ -377,6 +426,41 @@ function buildNetwork(spec: z.infer<typeof networkSchema>): SpecResult {
   }
   const diagram = layoutNetwork({ ...base, nodes, edges, network: { entities, links } }, "organic");
   return { ok: true, diagram };
+}
+
+/** A roadmap: lanes of items and milestones. Items without an end last about one column. */
+function buildRoadmap(spec: z.infer<typeof roadmapSchema>): Diagram {
+  const scale = spec.scale ?? "month";
+  const lanes: RoadmapLane[] = [];
+  const items: RoadmapItem[] = [];
+  spec.lanes.forEach((l, i) => {
+    const lane = createRoadmapLane(l.name || `Lane ${String(i + 1)}`, i);
+    if (l.color) lane.color = SECTION_HEX[l.color];
+    lanes.push(lane);
+    for (const it of l.items ?? []) {
+      const milestone = it.milestone ?? false;
+      const end = it.end && it.end >= it.start ? it.end : addDays(it.start, ROADMAP_DAYS[scale] - 1);
+      items.push(
+        createRoadmapItem(it.title || "Untitled", lane.id, it.start, 1, {
+          kind: milestone ? "milestone" : "item",
+          end: milestone ? it.start : end,
+          status: it.status ?? "planned",
+          owner: it.owner ?? "",
+          description: it.description ?? "",
+        }),
+      );
+    }
+  });
+  return {
+    ...createDiagram(spec.title ?? "Untitled roadmap", spec.style ?? "professional", "roadmap"),
+    roadmap: {
+      ...createRoadmapData(),
+      scale,
+      fiscalYearStart: spec.fiscalYearStart ?? 1,
+      lanes,
+      items: items.slice(0, 5_000),
+    },
+  };
 }
 
 function buildGantt(spec: z.infer<typeof ganttSchema>): Diagram {

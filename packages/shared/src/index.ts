@@ -5,3 +5,4 @@ export * from "./migrate.js";
 export * from "./kanban.js";
 export * from "./flowchart.js";
 export * from "./network.js";
+export * from "./roadmap.js";

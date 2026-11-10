@@ -16,6 +16,7 @@ import type { LayoutDirection } from "../editor/arrange";
 import { createGanttData, createSection, createTask, finishToStart } from "../gantt/model";
 import { autoSchedule, calendarOf, placeAt, spanOf } from "../gantt/schedule";
 import { kanbanToMermaid, parseMermaidKanban } from "../kanban/io";
+import { roadmapToMermaid } from "../roadmap/io";
 import { tidyFlowchart } from "../flowchart/layout";
 import { createFlowchartData, createFlowLane, flowNodeStyle, laneOf } from "../flowchart/model";
 import { boundsOf } from "../render/geometry";
@@ -601,5 +602,7 @@ function ganttToMermaid(diagram: Diagram): string {
 export function diagramToMermaid(diagram: Diagram): string {
   if (diagram.chartType === "gantt") return ganttToMermaid(diagram);
   if (diagram.chartType === "kanban") return kanbanToMermaid(diagram);
+  if (diagram.chartType === "roadmap" && diagram.roadmap)
+    return roadmapToMermaid(diagram.title, diagram.roadmap);
   return flowchartToMermaid(diagram);
 }

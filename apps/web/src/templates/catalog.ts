@@ -14,6 +14,7 @@ export const TEMPLATE_IDS = [
   "flowchart-approval",
   "network-blank",
   "network-investigation",
+  "roadmap-blank",
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -120,10 +121,18 @@ export const TEMPLATE_CATALOG: readonly TemplateInfo[] = [
   },
 
   {
+    id: "roadmap-blank",
+    chartType: "roadmap",
+    name: "Blank roadmap",
+    description: "Two empty lanes on a monthly timeline.",
+    category: "Project management",
+    blank: true,
+  },
+  {
     id: "roadmap",
-    chartType: "freeform",
-    name: "Roadmap",
-    description: "Quarterly milestones and workstreams at a glance.",
+    chartType: "roadmap",
+    name: "Product roadmap",
+    description: "Lanes for product, platform and growth over the next few quarters, with milestones.",
     category: "Project management",
     blank: false,
   },

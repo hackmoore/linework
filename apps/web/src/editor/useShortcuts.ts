@@ -4,6 +4,7 @@ import { useEditor } from "./store";
 import { useUi } from "./ui";
 import { toolsFor } from "./ToolPalette";
 import { flowActions } from "../flowchart/actions";
+import { shiftItems } from "../roadmap/actions";
 import { fitToContent, zoomBy } from "./viewport";
 
 function isTyping(target: EventTarget | null): boolean {
@@ -22,9 +23,21 @@ export function useShortcuts(getCanvasSize: () => { width: number; height: numbe
       const mod = event.metaKey || event.ctrlKey;
       const key = event.key.toLowerCase();
 
-      // Gantt charts and kanban boards only share undo/redo, select all and delete; the rest
-      // is canvas-specific.
-      if (state.diagram?.chartType === "gantt" || state.diagram?.chartType === "kanban") {
+      // Gantt charts, kanban boards and roadmaps only share undo/redo, select all and delete;
+      // the rest is canvas-specific. Roadmaps also move selected items with the arrow keys.
+      const chartType = state.diagram?.chartType;
+      if (chartType === "gantt" || chartType === "kanban" || chartType === "roadmap") {
+        const ids = state.selection.taskIds;
+        if (
+          chartType === "roadmap" &&
+          !mod &&
+          (key === "arrowleft" || key === "arrowright") &&
+          ids.length > 0
+        ) {
+          shiftItems(ids, (key === "arrowleft" ? -1 : 1) * (event.shiftKey ? 7 : 1));
+          event.preventDefault();
+          return;
+        }
         if (mod && key === "z" && !event.shiftKey) state.undo();
         else if (mod && ((key === "z" && event.shiftKey) || key === "y")) state.redo();
         else if (mod && key === "a") state.selectAll();

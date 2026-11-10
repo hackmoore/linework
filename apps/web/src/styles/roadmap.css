@@ -1,0 +1,76 @@
+/* Roadmap editor. It reuses the Gantt toolbar, scroll area and sticky axis. */
+.roadmap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+}
+.roadmap__corner {
+  padding: 0 0.75rem;
+}
+.roadmap__lanes {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  border-right: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.roadmap-lane {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  padding: 0.45rem 0.5rem 0 0;
+  border-bottom: 1px solid var(--color-border);
+  box-sizing: border-box;
+}
+.roadmap-lane__color {
+  align-self: stretch;
+  flex-shrink: 0;
+  width: 5px;
+  margin: -0.45rem 0.2rem 0 0;
+}
+.roadmap-lane__toggle {
+  flex-shrink: 0;
+  width: 20px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.roadmap-lane__name {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  padding: 0 0.3rem;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.roadmap-lane__name:hover,
+.roadmap-lane__name:focus {
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+.roadmap-lane__count {
+  flex-shrink: 0;
+  min-width: 20px;
+  padding: 0.2rem 0.35rem;
+  border-radius: 10px;
+  background: var(--color-surface-2);
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+.roadmap__svg .roadmap-bar__body {
+  cursor: grab;
+}
+.roadmap__svg .roadmap-bar__edge {
+  cursor: ew-resize;
+}

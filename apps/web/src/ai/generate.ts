@@ -18,7 +18,7 @@ import { parseSimpleSpec, SPEC_COLORS } from "../share/simpleSpec";
 export const AI_MODEL = "claude-opus-5-5";
 const KEY_STORAGE = "linework.anthropicApiKey";
 
-export type AiChartKind = "diagram" | "flowchart" | "gantt" | "kanban" | "network";
+export type AiChartKind = "diagram" | "flowchart" | "gantt" | "kanban" | "network" | "roadmap";
 
 export function loadApiKey(): string {
   try {
@@ -136,6 +136,26 @@ const networkOutput = z.object({
   ),
 });
 
+const roadmapOutput = z.object({
+  title: z.string(),
+  scale: z.enum(["week", "month", "quarter"]).describe("month for most roadmaps; quarter for a year or more"),
+  lanes: z.array(
+    z.object({
+      name: z.string().describe("Team, product area, theme or goal"),
+      items: z.array(
+        z.object({
+          title: z.string().describe("Outcome or initiative, under 40 characters"),
+          start: z.string().describe("YYYY-MM-DD"),
+          end: z.string().describe("YYYY-MM-DD; the same as start for milestones"),
+          milestone: z.boolean(),
+          status: z.enum(["planned", "in-progress", "done", "at-risk"]),
+          owner: z.string().nullable(),
+        }),
+      ),
+    }),
+  ),
+});
+
 const ganttOutput = z.object({
   title: z.string(),
   skipWeekends: z.boolean().describe("true unless the user says work happens at weekends"),
@@ -210,6 +230,14 @@ function systemPrompt(kind: AiChartKind): string {
       "Set WIP limits on in-progress style columns. Use swimlanes only for teams, clients or classes of work the user mentions.",
     ].join("\n");
   }
+  if (kind === "roadmap") {
+    return [
+      ...common,
+      "Produce a roadmap: 2-6 lanes (teams, product areas or themes) with items spanning weeks or months, plus milestones for launches and reviews.",
+      "Items are outcomes or initiatives, not tasks. Start the timeline around today unless the user gives dates. Mark past work done and current work in progress.",
+      "Pick the scale from the length of the plan: weeks for under three months, quarters for over a year, months otherwise.",
+    ].join("\n");
+  }
   if (kind === "network") {
     return [
       ...common,
@@ -281,6 +309,26 @@ function toSpec(kind: AiChartKind, output: unknown): unknown {
       })),
     };
   }
+  if (kind === "roadmap") {
+    const o = output as z.infer<typeof roadmapOutput>;
+    const iso = /^\d{4}-\d{2}-\d{2}$/;
+    return {
+      type: "roadmap",
+      title: o.title,
+      scale: o.scale,
+      lanes: o.lanes.map((l) => ({
+        name: l.name.slice(0, 100),
+        items: l.items
+          .filter((i) => iso.test(i.start))
+          .map(({ owner, end, ...i }) => ({
+            ...i,
+            title: i.title.slice(0, 200),
+            ...(iso.test(end) && end >= i.start ? { end } : {}),
+            ...(owner ? { owner: owner.slice(0, 100) } : {}),
+          })),
+      })),
+    };
+  }
   if (kind === "network") {
     const o = output as z.infer<typeof networkOutput>;
     return {
@@ -348,7 +396,9 @@ export async function generateChart(
           ? flowchartOutput
           : kind === "network"
             ? networkOutput
-            : flowOutput;
+            : kind === "roadmap"
+              ? roadmapOutput
+              : flowOutput;
   try {
     const response = await client.beta.messages.create(
       {

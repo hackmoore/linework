@@ -5,6 +5,8 @@ import type {
   KanbanCard,
   KanbanColumn,
   KanbanData,
+  RoadmapData,
+  RoadmapItem,
   ShapeKind,
 } from "@linework/shared";
 import { createDiagram, createEdge, createNode } from "../diagram/factory";
@@ -21,6 +23,7 @@ import {
 import { createCard, createColumn, createKanbanData } from "../kanban/model";
 import { tidyFlowchart } from "../flowchart/layout";
 import { parseSimpleSpec } from "../share/simpleSpec";
+import { createRoadmapData, createRoadmapItem, createRoadmapLane, monthStart } from "../roadmap/model";
 import { createFlowchartData, createFlowLane, flowNodeStyle } from "../flowchart/model";
 import { TEMPLATE_CATALOG, type TemplateId } from "./catalog";
 
@@ -121,53 +124,6 @@ function architecture(b: TemplateBuilder): void {
     .edge("worker", "cache");
 }
 
-function roadmap(b: TemplateBuilder): void {
-  const quarters = ["Q1", "Q2", "Q3", "Q4"];
-  quarters.forEach((q, i) => {
-    b.node(`q${i}`, "text", 220 + i * 200, 40, q, { fontSize: 20, textColor: "#4b5563" });
-  });
-  const lanes: readonly (readonly [string, typeof BLUE, readonly (readonly [number, number, string])[]])[] = [
-    [
-      "Product",
-      BLUE,
-      [
-        [0, 2, "Editor MVP"],
-        [2, 2, "Templates"],
-      ],
-    ],
-    [
-      "Platform",
-      PURPLE,
-      [
-        [0, 1, "Storage"],
-        [1, 2, "Cloud sync"],
-        [3, 1, "Self-host kit"],
-      ],
-    ],
-    [
-      "Growth",
-      GREEN,
-      [
-        [1, 1, "Launch"],
-        [2, 2, "Community styles"],
-      ],
-    ],
-  ];
-  lanes.forEach(([name, colors, items], lane) => {
-    const cy = 120 + lane * 110;
-    b.node(`lane${lane}`, "text", 60, cy, name, { fontSize: 16, width: 110, textAlign: "left" });
-    items.forEach(([start, span, label], i) => {
-      const width = span * 200 - 20;
-      b.node(`lane${lane}-${i}`, "rounded", 130 + start * 200 + 10 + width / 2, cy, label, {
-        ...colors,
-        width,
-        height: 60,
-      });
-    });
-  });
-  b.edge("lane0-0", "lane0-1").edge("lane1-1", "lane1-2", { routing: "elbow" });
-}
-
 function orgChart(b: TemplateBuilder): void {
   b.node("lead", "rounded", 400, 60, "Project lead", PURPLE)
     .node("design", "rounded", 160, 200, "Design", BLUE)
@@ -188,7 +144,6 @@ function orgChart(b: TemplateBuilder): void {
 
 const BUILDERS: Readonly<Partial<Record<TemplateId, (b: TemplateBuilder) => void>>> = {
   architecture,
-  roadmap,
   "org-chart": orgChart,
 };
 
@@ -284,6 +239,11 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
     const title = templateId === "kanban" ? (info?.name ?? "Sprint board") : "Untitled board";
     return { ...createDiagram(title, styleId, "kanban"), kanban };
   }
+  if (templateId === "roadmap-blank" || templateId === "roadmap") {
+    const data = templateId === "roadmap" ? productRoadmap() : createRoadmapData();
+    const title = templateId === "roadmap" ? (info?.name ?? "Product roadmap") : "Untitled roadmap";
+    return { ...createDiagram(title, styleId, "roadmap"), roadmap: data };
+  }
   if (templateId === "network-blank" || templateId === "network-investigation") {
     return networkTemplate(templateId, styleId, info?.name ?? "Network map");
   }
@@ -372,4 +332,57 @@ function networkTemplate(
   const built = parseSimpleSpec({ ...INVESTIGATION, title: name, style: styleId });
   if (!built.ok) throw new Error(built.error);
   return built.diagram;
+}
+
+/** Example product roadmap, dated from the start of last month so it always looks current. */
+function productRoadmap(): RoadmapData {
+  const base = monthStart(addDays(monthStart(todayIso()), -1));
+  const month = (n: number): string => {
+    const [y = 2026, m = 1] = base.split("-").map(Number);
+    const d = new Date(Date.UTC(y, m - 1 + n, 1));
+    return d.toISOString().slice(0, 10);
+  };
+  const lanes = [
+    createRoadmapLane("Product", 0),
+    createRoadmapLane("Platform", 2),
+    createRoadmapLane("Growth", 1),
+  ];
+  const [product, platform, growth] = lanes.map((l) => l.id) as [string, string, string];
+  const item = (
+    title: string,
+    laneId: string,
+    from: number,
+    months: number,
+    status: RoadmapItem["status"],
+    owner = "",
+  ): RoadmapItem =>
+    createRoadmapItem(title, laneId, month(from), 1, {
+      end: addDays(month(from + months), -1),
+      status,
+      owner,
+    });
+  const milestone = (
+    title: string,
+    laneId: string,
+    at: number,
+    status: RoadmapItem["status"] = "planned",
+  ): RoadmapItem =>
+    createRoadmapItem(title, laneId, addDays(month(at), 14), 1, { kind: "milestone", status });
+  return {
+    ...createRoadmapData(),
+    scale: "month",
+    lanes,
+    items: [
+      item("Editor redesign", product, 0, 3, "in-progress", "Priya"),
+      item("Templates gallery", product, 3, 2, "planned", "Lee"),
+      item("Mobile viewer", product, 5, 3, "planned"),
+      milestone("Public beta", product, 3),
+      item("Storage migration", platform, 0, 2, "done", "Sam"),
+      item("Real-time sync", platform, 2, 3, "at-risk", "Sam"),
+      item("Self-hosting kit", platform, 5, 2, "planned"),
+      item("Launch campaign", growth, 2, 2, "planned", "Alex"),
+      item("Community programme", growth, 4, 4, "planned"),
+      milestone("1.0 launch", growth, 4),
+    ],
+  };
 }

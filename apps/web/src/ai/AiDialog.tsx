@@ -11,10 +11,23 @@ const EXAMPLES: Readonly<Record<AiChartKind, string>> = {
     "A sprint board for a 4-person mobile team: backlog, to do, in progress (limit 3), review and done. Include a couple of bugs and a release task.",
   flowchart:
     "How a support ticket is handled: the customer submits it, support triages it, engineering fixes bugs, and support replies and closes it. Use swimlanes for customer, support and engineering.",
+  roadmap:
+    "Next year's roadmap for a note-taking app: mobile apps, sync and offline, collaboration, and an enterprise tier. Teams: Mobile, Platform, Growth. Launch 2.0 in the spring.",
   network:
     "Alex Reed is a director of Northgate Ltd and Brightwater Holdings. Sam Ortiz calls Alex often and was seen driving a white van registered to Northgate. Brightwater pays Sam's company, Ortiz Consulting.",
   diagram:
     "Architecture of a food delivery app: mobile app and web app, API gateway, orders, payments and notifications services, a Postgres database and a message queue.",
+};
+
+const AI_KINDS: readonly AiChartKind[] = ["flowchart", "gantt", "roadmap", "kanban", "network", "diagram"];
+
+const KIND_LABELS: Readonly<Record<AiChartKind, string>> = {
+  flowchart: "Flowchart",
+  gantt: "Gantt",
+  roadmap: "Roadmap",
+  kanban: "Kanban",
+  network: "Network",
+  diagram: "Diagram",
 };
 
 /** "Generate with AI" dialog: describe a chart, get a new diagram. Uses the user's own Anthropic API key. */
@@ -88,7 +101,7 @@ export function AiDialog({
           </button>
         </div>
         <div className="segmented segmented--full" role="radiogroup" aria-label="Chart type">
-          {(["flowchart", "gantt", "kanban", "network", "diagram"] as const).map((k) => (
+          {AI_KINDS.map((k) => (
             <button
               key={k}
               type="button"
@@ -99,13 +112,7 @@ export function AiDialog({
                 setKind(k);
               }}
             >
-              {k === "gantt"
-                ? "Gantt"
-                : k === "kanban"
-                  ? "Kanban"
-                  : k === "flowchart"
-                    ? "Flowchart"
-                    : "Diagram"}
+              {KIND_LABELS[k]}
             </button>
           ))}
         </div>

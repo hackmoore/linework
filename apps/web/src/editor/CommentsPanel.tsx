@@ -18,6 +18,8 @@ function targetName(diagram: Diagram, comment: DiagramComment): string {
   if (node) return (node.label.split("\n")[0] ?? "") || "Shape";
   const task = diagram.gantt?.tasks.find((t) => t.id === comment.targetId);
   if (task) return task.name;
+  const item = diagram.roadmap?.items.find((i) => i.id === comment.targetId);
+  if (item) return item.title;
   return diagram.kanban?.cards.find((c) => c.id === comment.targetId)?.title ?? "Deleted item";
 }
 
@@ -77,6 +79,7 @@ function CommentCard({
     if (!id) return;
     if (diagram.nodes.some((n) => n.id === id)) state.select({ nodeIds: [id] });
     else if (diagram.gantt?.tasks.some((t) => t.id === id)) state.select({ taskIds: [id] });
+    else if (diagram.roadmap?.items.some((i) => i.id === id)) state.select({ taskIds: [id] });
     else if (diagram.kanban?.cards.some((c) => c.id === id)) state.select({ cardIds: [id] });
   };
   return (

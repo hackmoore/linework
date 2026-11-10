@@ -3,6 +3,7 @@ import { flowchartDataSchema, validateFlowchart } from "./flowchart.js";
 import { ganttDataSchema, validateGantt } from "./gantt.js";
 import { kanbanDataSchema, validateKanban } from "./kanban.js";
 import { networkDataSchema, validateNetwork } from "./network.js";
+import { roadmapDataSchema, validateRoadmap } from "./roadmap.js";
 import { migrateDiagram } from "./migrate.js";
 
 /** Current on-disk document format version; bump with a migration when the shape changes. */
@@ -12,10 +13,10 @@ export const DIAGRAM_FORMAT_VERSION = 2;
  * What a document is. Each chart type has its own objects and editor:
  * freeform diagrams, flowcharts and network maps use nodes and edges (flowcharts add
  * direction and swimlanes in `flowchart`, network maps add entity and link details in
- * `network`); gantt charts and kanban boards use the `gantt` and `kanban`
+ * `network`); gantt charts, kanban boards and roadmaps use the `gantt`, `kanban` and `roadmap`
  * payloads.
  */
-export const CHART_TYPES = ["freeform", "gantt", "kanban", "flowchart", "network"] as const;
+export const CHART_TYPES = ["freeform", "gantt", "kanban", "flowchart", "network", "roadmap"] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
 
 export const SHAPE_KINDS = [
@@ -142,6 +143,7 @@ export const diagramSchema = z
     kanban: kanbanDataSchema.optional(),
     flowchart: flowchartDataSchema.optional(),
     network: networkDataSchema.optional(),
+    roadmap: roadmapDataSchema.optional(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
   })
@@ -199,6 +201,15 @@ export const diagramSchema = z
         ctx.addIssue({ code: "custom", path: ["network", ...path], message });
       }
     }
+    if (diagram.chartType === "roadmap") {
+      if (!diagram.roadmap) {
+        ctx.addIssue({ code: "custom", path: ["roadmap"], message: "Roadmap is missing its data" });
+        return;
+      }
+      for (const [path, message] of validateRoadmap(diagram.roadmap)) {
+        ctx.addIssue({ code: "custom", path: ["roadmap", ...path], message });
+      }
+    }
   });
 export type Diagram = z.infer<typeof diagramSchema>;
 
@@ -220,6 +231,8 @@ export function itemCount(diagram: Diagram): number {
       return diagram.gantt?.tasks.length ?? 0;
     case "kanban":
       return diagram.kanban?.cards.length ?? 0;
+    case "roadmap":
+      return diagram.roadmap?.items.length ?? 0;
     default:
       return diagram.nodes.length;
   }

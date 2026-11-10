@@ -4,6 +4,8 @@ import { GanttChartContent } from "../gantt/GanttSvg";
 import { AXIS_HEIGHT, computeGanttLayout, LABEL_COLUMN_WIDTH } from "../gantt/layout";
 import { KanbanChartContent } from "../kanban/KanbanSvg";
 import { computeKanbanLayout } from "../kanban/layout";
+import { computeRoadmapLayout, LANE_COLUMN_WIDTH } from "../roadmap/layout";
+import { RoadmapChartContent } from "../roadmap/RoadmapSvg";
 
 export interface ChartDrawing {
   readonly width: number;
@@ -13,7 +15,7 @@ export interface ChartDrawing {
 }
 
 /**
- * Static drawing of a structured chart (gantt, kanban) for export, thumbnails and
+ * Static drawing of a structured chart (gantt, kanban, roadmap) for export, thumbnails and
  * presenting. Null for freeform diagrams, which are drawn from their shapes.
  */
 export function chartDrawing(diagram: Diagram): ChartDrawing | null {
@@ -31,6 +33,14 @@ export function chartDrawing(diagram: Diagram): ChartDrawing | null {
       width: layout.width,
       height: layout.height,
       content: <KanbanChartContent layout={layout} styleId={diagram.styleId} />,
+    };
+  }
+  if (diagram.chartType === "roadmap" && diagram.roadmap) {
+    const layout = computeRoadmapLayout(diagram.roadmap);
+    return {
+      width: LANE_COLUMN_WIDTH + layout.width,
+      height: layout.height,
+      content: <RoadmapChartContent layout={layout} styleId={diagram.styleId} />,
     };
   }
   return null;

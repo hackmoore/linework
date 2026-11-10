@@ -11,6 +11,7 @@ import "./styles/home.css";
 import "./styles/editor.css";
 import "./styles/gantt.css";
 import "./styles/kanban.css";
+import "./styles/roadmap.css";
 import { App } from "./App";
 
 const container: HTMLElement | null = document.getElementById("root");

@@ -5,6 +5,8 @@ import { importCards, isKanbanCsv } from "../kanban/io";
 import { createKanbanData } from "../kanban/model";
 import { parseMermaid } from "../mermaid/mermaid";
 import { importLinksCsv, isNetworkCsv } from "../network/io";
+import { importRoadmapCsv, isRoadmapCsv } from "../roadmap/io";
+import { createRoadmapData } from "../roadmap/model";
 import { parseSimpleSpec } from "./simpleSpec";
 
 export type TextImportResult = { ok: true; diagram: Diagram } | { ok: false; error: string };
@@ -20,6 +22,15 @@ export function importText(text: string, fileName = ""): TextImportResult {
   if (/\.csv$/i.test(fileName) && isNetworkCsv(text)) {
     const result = importLinksCsv(text, fileName.replace(/\.[^.]+$/, "") || "Imported network");
     return result.ok ? { ok: true, diagram: result.diagram } : result;
+  }
+  if (/\.csv$/i.test(fileName) && isRoadmapCsv(text)) {
+    const result = importRoadmapCsv(text, { ...createRoadmapData(), lanes: [] });
+    if (!result.ok) return result;
+    const title = fileName.replace(/\.[^.]+$/, "") || "Imported roadmap";
+    return {
+      ok: true,
+      diagram: { ...createDiagram(title, "professional", "roadmap"), roadmap: result.data },
+    };
   }
   if (/\.csv$/i.test(fileName) && isKanbanCsv(text)) {
     const result = importCards({ ...createKanbanData(), columns: [] }, text);

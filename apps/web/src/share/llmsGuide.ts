@@ -15,7 +15,7 @@ export function llmsGuide({ origin, iconIds }: GuideOptions): string {
   const base = origin || "https://<this site>";
   return `# Linework: instructions for AI assistants
 
-> Linework is a free, open source editor for flowcharts, network maps, diagrams, Gantt charts and kanban boards. It runs in the browser
+> Linework is a free, open source editor for flowcharts, network maps, diagrams, Gantt charts, roadmaps and kanban boards. It runs in the browser
 > with no sign-in. You can create a chart for a user by giving them a link. When they open
 > it, the chart appears in the editor, where they can edit it, save it locally and export
 > PNG, SVG, PDF, CSV, MS Project XML or Mermaid.
@@ -161,6 +161,35 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
 - \`after\`: ids of tasks that must finish first. Dependent tasks move later automatically.
 - \`skipWeekends\`: count durations in working days (Monday to Friday).
 - \`milestone\`: true for a single-day checkpoint. \`owner\` and \`progress\` (0-100) are optional.
+
+### Roadmap (product or technology roadmap, quarterly plan, release timeline)
+
+    {
+      "type": "roadmap",
+      "title": "2027 roadmap",
+      "scale": "month",
+      "lanes": [
+        {
+          "name": "Product",
+          "items": [
+            { "title": "Editor redesign", "start": "2027-01-04", "end": "2027-03-26", "status": "in-progress", "owner": "Priya" },
+            { "title": "Public beta", "start": "2027-04-01", "milestone": true }
+          ]
+        },
+        {
+          "name": "Platform",
+          "items": [{ "title": "Real-time sync", "start": "2027-02-01", "end": "2027-05-28", "status": "at-risk" }]
+        }
+      ]
+    }
+
+- Lanes are rows for teams, product areas or themes. Items need a \`title\` and a \`start\`
+  (YYYY-MM-DD). \`end\` defaults to about one column after the start.
+- \`milestone\`: true for a single date. \`status\`: planned (default), in-progress, done or
+  at-risk. \`owner\`, \`description\` and lane \`color\` are optional.
+- \`scale\`: week, month (default) or quarter. \`fiscalYearStart\`: month number (1-12) the
+  financial year starts, for FY quarter labels.
+- Use a Gantt chart instead when the user needs dependencies or day-by-day scheduling.
 
 ### Kanban board (task board, sprint, pipeline)
 

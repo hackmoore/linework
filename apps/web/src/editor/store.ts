@@ -5,6 +5,7 @@ import { withoutTasks } from "../gantt/model";
 import { withoutCards } from "../kanban/model";
 import { flowEdgeDefaults, flowNodeStyle } from "../flowchart/model";
 import { pruneNetwork } from "../network/model";
+import { withoutItems } from "../roadmap/model";
 import { rectsIntersect, type Rect } from "../render/geometry";
 
 export type Tool = "select" | "connect" | ShapeKind;
@@ -19,7 +20,7 @@ export interface Viewport {
 export interface Selection {
   readonly nodeIds: readonly string[];
   readonly edgeIds: readonly string[];
-  /** Selected gantt tasks and milestones. */
+  /** Selected gantt tasks and milestones, or roadmap items. */
   readonly taskIds: readonly string[];
   /** Selected kanban cards. */
   readonly cardIds: readonly string[];
@@ -111,7 +112,10 @@ function pruneSelection(selection: Selection, diagram: Diagram): Selection {
   const editable = editableLayerIds(diagram);
   const nodeIds = new Set(diagram.nodes.filter((n) => editable.has(n.layerId)).map((n) => n.id));
   const edgeIds = new Set(diagram.edges.map((e) => e.id));
-  const taskIds = new Set(diagram.gantt?.tasks.map((t) => t.id));
+  const taskIds = new Set([
+    ...(diagram.gantt?.tasks.map((t) => t.id) ?? []),
+    ...(diagram.roadmap?.items.map((i) => i.id) ?? []),
+  ]);
   const cardIds = new Set(diagram.kanban?.cards.map((c) => c.id));
   return {
     nodeIds: selection.nodeIds.filter((id) => nodeIds.has(id)),
@@ -238,7 +242,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
       selection: {
         nodeIds: diagram.nodes.filter((n) => editable.has(n.layerId)).map((n) => n.id),
         edgeIds: diagram.edges.map((e) => e.id),
-        taskIds: diagram.gantt?.tasks.map((t) => t.id) ?? [],
+        taskIds: diagram.gantt?.tasks.map((t) => t.id) ?? diagram.roadmap?.items.map((i) => i.id) ?? [],
         cardIds: diagram.kanban?.cards.map((c) => c.id) ?? [],
       },
     });
@@ -321,6 +325,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
         // Dependencies on deleted tasks go too, so the plan stays valid.
         gantt: d.gantt && withoutTasks(d.gantt, taskIds),
         kanban: d.kanban && withoutCards(d.kanban, cardIds),
+        roadmap: d.roadmap && withoutItems(d.roadmap, taskIds),
         // Comments about deleted objects go with them.
         comments: d.comments.filter(
           (c) =>

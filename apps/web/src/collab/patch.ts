@@ -5,6 +5,7 @@ import {
   type GanttDependency,
   type FlowchartData,
   type NetworkData,
+  type RoadmapData,
   type KanbanData,
 } from "@linework/shared";
 
@@ -51,7 +52,9 @@ type CollectionName =
   | "kanban.cards"
   | "flowchart.lanes"
   | "network.entities"
-  | "network.links";
+  | "network.links"
+  | "roadmap.lanes"
+  | "roadmap.items";
 const COLLECTIONS: readonly CollectionName[] = [
   "nodes",
   "edges",
@@ -65,7 +68,10 @@ const COLLECTIONS: readonly CollectionName[] = [
   "flowchart.lanes",
   "network.entities",
   "network.links",
+  "roadmap.lanes",
+  "roadmap.items",
 ];
+const ROADMAP_SCALARS = ["scale", "fiscalYearStart", "showToday"] as const;
 const FLOWCHART_SCALARS = ["direction", "laneStart"] as const;
 
 function getCollection(d: Diagram, name: CollectionName): readonly Item[] {
@@ -86,6 +92,10 @@ function getCollection(d: Diagram, name: CollectionName): readonly Item[] {
       return d.network?.entities ?? [];
     case "network.links":
       return d.network?.links ?? [];
+    case "roadmap.lanes":
+      return d.roadmap?.lanes ?? [];
+    case "roadmap.items":
+      return d.roadmap?.items ?? [];
     default:
       return d[name];
   }
@@ -104,6 +114,11 @@ export function diffDiagrams(prev: Diagram, next: Diagram): DiagramPatch | null 
     for (const key of FLOWCHART_SCALARS)
       if (!prev.flowchart || !same(prev.flowchart[key], next.flowchart[key]))
         set[`flowchart.${key}`] = next.flowchart[key];
+  }
+  if (next.roadmap) {
+    for (const key of ROADMAP_SCALARS)
+      if (!prev.roadmap || !same(prev.roadmap[key], next.roadmap[key]))
+        set[`roadmap.${key}`] = next.roadmap[key];
   }
   const collections: Record<string, CollectionPatch> = {};
   for (const name of COLLECTIONS) {
@@ -214,6 +229,26 @@ export function applyPatch(doc: Diagram, patch: DiagramPatch): Diagram {
       },
     };
   }
+  const roadmapTouched =
+    COLLECTIONS.some((c) => c.startsWith("roadmap.") && c in patch.collections) ||
+    ROADMAP_SCALARS.some((k) => `roadmap.${k}` in s);
+  if (doc.roadmap || roadmapTouched) {
+    const base: RoadmapData = doc.roadmap ?? {
+      scale: "month",
+      fiscalYearStart: 1,
+      showToday: true,
+      lanes: [],
+      items: [],
+    };
+    let roadmap: RoadmapData = {
+      ...base,
+      lanes: applyCollection(base.lanes, patch.collections["roadmap.lanes"]),
+      items: applyCollection(base.items, patch.collections["roadmap.items"]),
+    };
+    for (const key of ROADMAP_SCALARS)
+      if (`roadmap.${key}` in s) roadmap = { ...roadmap, [key]: s[`roadmap.${key}`] };
+    next = { ...next, roadmap };
+  }
   return repair(next);
 }
 
@@ -272,6 +307,16 @@ export function repair(d: Diagram): Diagram {
     });
     kanban = { ...kanban, cards };
   }
+  // An item whose lane was deleted concurrently moves to the first lane (or goes, with none).
+  let roadmap = d.roadmap;
+  if (roadmap) {
+    const laneIds = new Set(roadmap.lanes.map((l) => l.id));
+    const firstLane = roadmap.lanes[0]?.id;
+    const items = roadmap.items.flatMap((i) =>
+      laneIds.has(i.laneId) ? [i] : firstLane ? [{ ...i, laneId: firstLane }] : [],
+    );
+    roadmap = { ...roadmap, items };
+  }
   // Details of entities or links deleted concurrently go with them.
   const edgeIds = new Set(edges.map((e) => e.id));
   const network = d.network && {
@@ -286,6 +331,7 @@ export function repair(d: Diagram): Diagram {
     ...(gantt ? { gantt } : {}),
     ...(kanban ? { kanban } : {}),
     ...(network ? { network } : {}),
+    ...(roadmap ? { roadmap } : {}),
   };
 }
 
