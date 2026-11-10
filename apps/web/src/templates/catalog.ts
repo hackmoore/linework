@@ -25,6 +25,8 @@ export const TEMPLATE_IDS = [
   "class-blank",
   "state",
   "state-blank",
+  "sequence",
+  "sequence-blank",
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -187,6 +189,23 @@ export const TEMPLATE_CATALOG: readonly TemplateInfo[] = [
       "A state machine for an online order: payment with a choice, retries, cancellation and shipping.",
     category: "Software design",
     blank: false,
+  },
+  {
+    id: "sequence",
+    chartType: "sequence",
+    name: "Checkout sequence",
+    description:
+      "Paying for an order online: the web app, orders API, payment provider and database, with accepted and declined cards.",
+    category: "Software design",
+    blank: false,
+  },
+  {
+    id: "sequence-blank",
+    chartType: "sequence",
+    name: "Blank sequence diagram",
+    description: "Two participants, ready for messages.",
+    category: "Software design",
+    blank: true,
   },
   {
     id: "state-blank",

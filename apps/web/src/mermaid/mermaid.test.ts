@@ -64,7 +64,7 @@ describe("Mermaid flowchart import", () => {
   });
 
   it("rejects unsupported diagram types", () => {
-    expect(parseMermaid("sequenceDiagram\n A->>B: hi").ok).toBe(false);
+    expect(parseMermaid('pie\n "A": 1').ok).toBe(false);
   });
 });
 

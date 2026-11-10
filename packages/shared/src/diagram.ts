@@ -4,6 +4,7 @@ import { ganttDataSchema, validateGantt } from "./gantt.js";
 import { kanbanDataSchema, validateKanban } from "./kanban.js";
 import { networkDataSchema, validateNetwork } from "./network.js";
 import { roadmapDataSchema, validateRoadmap } from "./roadmap.js";
+import { sequenceDataSchema, validateSequence } from "./sequence.js";
 import { migrateDiagram } from "./migrate.js";
 
 /** Current on-disk document format version; bump with a migration when the shape changes. */
@@ -16,7 +17,8 @@ export const DIAGRAM_FORMAT_VERSION = 2;
  * `network`); gantt charts, kanban boards and roadmaps use the `gantt`, `kanban` and `roadmap`
  * payloads. Architecture, entity-relationship, org, mind map, class and state diagrams are
  * nodes and edges too, with the details they need kept on the shapes themselves (`meta`, and
- * compartments written into table and class labels).
+ * compartments written into table and class labels). Sequence diagrams use the `sequence`
+ * payload: participants and an ordered list of messages, notes and fragments.
  */
 export const CHART_TYPES = [
   "freeform",
@@ -31,6 +33,7 @@ export const CHART_TYPES = [
   "mindmap",
   "class",
   "state",
+  "sequence",
 ] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
 
@@ -200,6 +203,7 @@ export const diagramSchema = z
     flowchart: flowchartDataSchema.optional(),
     network: networkDataSchema.optional(),
     roadmap: roadmapDataSchema.optional(),
+    sequence: sequenceDataSchema.optional(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
   })
@@ -266,6 +270,15 @@ export const diagramSchema = z
         ctx.addIssue({ code: "custom", path: ["roadmap", ...path], message });
       }
     }
+    if (diagram.chartType === "sequence") {
+      if (!diagram.sequence) {
+        ctx.addIssue({ code: "custom", path: ["sequence"], message: "Sequence diagram is missing its data" });
+        return;
+      }
+      for (const [path, message] of validateSequence(diagram.sequence)) {
+        ctx.addIssue({ code: "custom", path: ["sequence", ...path], message });
+      }
+    }
   });
 export type Diagram = z.infer<typeof diagramSchema>;
 
@@ -289,6 +302,8 @@ export function itemCount(diagram: Diagram): number {
       return diagram.kanban?.cards.length ?? 0;
     case "roadmap":
       return diagram.roadmap?.items.length ?? 0;
+    case "sequence":
+      return diagram.sequence?.steps.filter((s) => s.type === "message").length ?? 0;
     default:
       return diagram.nodes.length;
   }

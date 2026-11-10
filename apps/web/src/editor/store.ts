@@ -6,6 +6,7 @@ import { withoutCards } from "../kanban/model";
 import { flowEdgeDefaults, flowNodeStyle } from "../flowchart/model";
 import { pruneNetwork } from "../network/model";
 import { withoutItems } from "../roadmap/model";
+import { sequenceIds, withoutSequenceItems } from "../sequence/model";
 import { kindModel } from "../kinds/registry";
 import { fitAllCompartments } from "../render/compartments";
 import { rectsIntersect, type Rect } from "../render/geometry";
@@ -27,7 +28,7 @@ export interface Viewport {
 export interface Selection {
   readonly nodeIds: readonly string[];
   readonly edgeIds: readonly string[];
-  /** Selected gantt tasks and milestones, or roadmap items. */
+  /** Selected gantt tasks and milestones, roadmap items, or sequence participants and steps. */
   readonly taskIds: readonly string[];
   /** Selected kanban cards. */
   readonly cardIds: readonly string[];
@@ -122,6 +123,7 @@ function pruneSelection(selection: Selection, diagram: Diagram): Selection {
   const taskIds = new Set([
     ...(diagram.gantt?.tasks.map((t) => t.id) ?? []),
     ...(diagram.roadmap?.items.map((i) => i.id) ?? []),
+    ...(diagram.sequence ? sequenceIds(diagram.sequence) : []),
   ]);
   const cardIds = new Set(diagram.kanban?.cards.map((c) => c.id));
   return {
@@ -251,7 +253,10 @@ export const useEditor = create<EditorState>()((set, get) => ({
       selection: {
         nodeIds: diagram.nodes.filter((n) => editable.has(n.layerId)).map((n) => n.id),
         edgeIds: diagram.edges.map((e) => e.id),
-        taskIds: diagram.gantt?.tasks.map((t) => t.id) ?? diagram.roadmap?.items.map((i) => i.id) ?? [],
+        taskIds:
+          diagram.gantt?.tasks.map((t) => t.id) ??
+          diagram.roadmap?.items.map((i) => i.id) ??
+          (diagram.sequence ? sequenceIds(diagram.sequence) : []),
         cardIds: diagram.kanban?.cards.map((c) => c.id) ?? [],
       },
     });
@@ -338,6 +343,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
         gantt: d.gantt && withoutTasks(d.gantt, taskIds),
         kanban: d.kanban && withoutCards(d.kanban, cardIds),
         roadmap: d.roadmap && withoutItems(d.roadmap, taskIds),
+        sequence: d.sequence && withoutSequenceItems(d.sequence, taskIds),
         // Comments about deleted objects go with them.
         comments: d.comments.filter(
           (c) =>

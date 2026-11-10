@@ -12,6 +12,7 @@ import "./styles/editor.css";
 import "./styles/gantt.css";
 import "./styles/kanban.css";
 import "./styles/roadmap.css";
+import "./styles/sequence.css";
 import "./styles/canvas-kinds.css";
 import { App } from "./App";
 

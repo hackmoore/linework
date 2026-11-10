@@ -29,7 +29,7 @@ Build a URL of this form and give it to the user as a clickable link:
 The payload goes after the \`#\`, so it is never sent to a server. Two formats are best
 for assistants:
 
-- \`m=\` Mermaid text (flowchart/graph, gantt or kanban), URL-encoded.
+- \`m=\` Mermaid text (flowchart/graph, gantt, kanban or sequenceDiagram), URL-encoded.
 - \`s=\` Linework simple JSON (below), URL-encoded. Use this for icons, colours, groups,
   owners, progress, WIP limits and due dates, which Mermaid can't express.
 
@@ -54,6 +54,13 @@ Gantt: \`title\`, \`dateFormat YYYY-MM-DD\` (only this format), \`excludes weeke
 Kanban: \`kanban\`, then one line per column, then its cards indented further, like
 \`  todo[To do]\` and \`    t1[Write spec]@{ assigned: 'Sam', priority: 'High' }\`.
 Priorities: 'Very High', 'High', 'Low', 'Very Low'.
+
+Sequence: \`sequenceDiagram\`, \`autonumber\`, \`participant A as Name\`, \`actor U\`,
+\`participant DB@{ "type": "database" }\`, messages \`A->>B: call\`, \`A-)B: async\`,
+\`B-->>A: reply\` (\`+\` / \`-\` before the receiver starts or ends an activation),
+\`Note right of A: text\`, \`Note over A,B: text\`, \`loop\`, \`alt\` / \`else\`, \`opt\`,
+\`par\` / \`and\`, \`critical\` / \`option\`, \`break\`, \`rect\` ... \`end\`, \`create participant\`
+and \`destroy\`.
 
 Example (a flowchart):
 
@@ -376,6 +383,37 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
 - Transitions: \`from\` and \`to\` are state names, or "[*]" for the start and the end.
   Optional: \`event\`, \`guard\`, \`action\`. Put a guard on every branch out of a choice.
 - Mermaid \`stateDiagram-v2\` text also imports as a state machine.
+
+### Sequence diagram (API calls, user flows, protocols, who talks to whom)
+
+    {
+      "type": "sequence",
+      "participants": [
+        { "name": "User", "kind": "actor" },
+        { "name": "API" },
+        { "name": "DB", "kind": "database" }
+      ],
+      "steps": [
+        { "type": "message", "from": "User", "to": "API", "text": "Log in", "activate": true },
+        { "type": "message", "from": "API", "to": "DB", "text": "Find user" },
+        {
+          "type": "fragment", "kind": "alt", "label": "password ok",
+          "steps": [{ "type": "message", "from": "API", "to": "User", "text": "Session", "arrow": "reply", "deactivate": true }],
+          "sections": [{ "label": "wrong password", "steps": [{ "type": "message", "from": "API", "to": "User", "text": "401", "arrow": "reply", "deactivate": true }] }]
+        },
+        { "type": "note", "participants": ["User"], "text": "Shown on the login page" }
+      ]
+    }
+
+- Participants need a unique \`name\`, listed left to right. \`kind\`: participant (default),
+  actor, database, queue, boundary, control or entity.
+- Steps run top to bottom. Message \`arrow\`: sync (default, the sender waits), async or
+  reply (dashed). Optional: \`activate\` (the receiver gets an activation bar), \`deactivate\`
+  (the sender's bar ends), \`create\` and \`destroy\` (the receiver's lifeline starts or ends).
+- Notes: \`participants\` (one or two names), optional \`position\` left, right or over.
+- Fragments: \`kind\` loop, alt, opt, par, critical, break or group, an optional \`label\`
+  (the condition), nested \`steps\`, and for alt, par and critical, more \`sections\`.
+- Mermaid \`sequenceDiagram\` text also imports as a sequence diagram.
 
 ## Rules
 

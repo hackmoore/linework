@@ -17,6 +17,7 @@ import { createGanttData, createSection, createTask, finishToStart } from "../ga
 import { autoSchedule, calendarOf, placeAt, spanOf } from "../gantt/schedule";
 import { kanbanToMermaid, parseMermaidKanban } from "../kanban/io";
 import { roadmapToMermaid } from "../roadmap/io";
+import { isMermaidSequence, parseMermaidSequence, sequenceToMermaid } from "../sequence/io";
 import { tidyFlowchart } from "../flowchart/layout";
 import { createFlowchartData, createFlowLane, flowNodeStyle, laneOf } from "../flowchart/model";
 import { kindModel } from "../kinds/registry";
@@ -47,9 +48,16 @@ export function parseMermaid(text: string): MermaidResult {
   }
   if (/^(flowchart|graph)\b/.test(header)) return parseFlowchart(lines);
   if (/^gantt\b/.test(header)) return parseGantt(lines);
+  if (isMermaidSequence(text)) {
+    const result = parseMermaidSequence(text);
+    if (!result.ok) return result;
+    const diagram = createDiagram(result.title ?? "Sequence diagram", "professional", "sequence");
+    return { ok: true, diagram: { ...diagram, sequence: result.data }, skipped: 0 };
+  }
   return {
     ok: false,
-    error: "Only Mermaid flowcharts (flowchart/graph), gantt charts and kanban boards are supported",
+    error:
+      "Only Mermaid flowcharts (flowchart/graph), gantt charts, kanban boards and sequence diagrams are supported",
   };
 }
 
@@ -612,5 +620,7 @@ export function diagramToMermaid(diagram: Diagram): string {
   if (diagram.chartType === "kanban") return kanbanToMermaid(diagram);
   if (diagram.chartType === "roadmap" && diagram.roadmap)
     return roadmapToMermaid(diagram.title, diagram.roadmap);
+  if (diagram.chartType === "sequence" && diagram.sequence)
+    return sequenceToMermaid(diagram.title, diagram.sequence);
   return flowchartToMermaid(diagram);
 }

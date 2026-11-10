@@ -6,6 +6,8 @@ import { KanbanChartContent } from "../kanban/KanbanSvg";
 import { computeKanbanLayout } from "../kanban/layout";
 import { computeRoadmapLayout, LANE_COLUMN_WIDTH } from "../roadmap/layout";
 import { RoadmapChartContent } from "../roadmap/RoadmapSvg";
+import { computeSequenceLayout } from "../sequence/layout";
+import { SequenceChartContent } from "../sequence/SequenceSvg";
 
 export interface ChartDrawing {
   readonly width: number;
@@ -15,7 +17,7 @@ export interface ChartDrawing {
 }
 
 /**
- * Static drawing of a structured chart (gantt, kanban, roadmap) for export, thumbnails and
+ * Static drawing of a structured chart (gantt, kanban, roadmap, sequence) for export, thumbnails and
  * presenting. Null for freeform diagrams, which are drawn from their shapes.
  */
 export function chartDrawing(diagram: Diagram): ChartDrawing | null {
@@ -41,6 +43,14 @@ export function chartDrawing(diagram: Diagram): ChartDrawing | null {
       width: LANE_COLUMN_WIDTH + layout.width,
       height: layout.height,
       content: <RoadmapChartContent layout={layout} styleId={diagram.styleId} />,
+    };
+  }
+  if (diagram.chartType === "sequence" && diagram.sequence) {
+    const layout = computeSequenceLayout(diagram.sequence);
+    return {
+      width: layout.width,
+      height: layout.height,
+      content: <SequenceChartContent layout={layout} styleId={diagram.styleId} />,
     };
   }
   return null;

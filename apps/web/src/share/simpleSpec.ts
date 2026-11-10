@@ -42,6 +42,7 @@ import { ICONS } from "../library/icons";
 import { buildMindmapSpec, mindmapSpecSchema } from "../mindmap/spec";
 import { buildOrgSpec, orgSpecSchema } from "../org/spec";
 import { buildStates, stateSpecSchema } from "../statemachine/spec";
+import { buildSequence, sequenceSpecSchema } from "../sequence/spec";
 import { boundsOf } from "../render/geometry";
 
 /*
@@ -260,6 +261,7 @@ const specSchema = z.discriminatedUnion("type", [
   mindmapSpecSchema,
   classSpecSchema,
   stateSpecSchema,
+  sequenceSpecSchema,
 ]);
 export type SimpleSpec = z.input<typeof specSchema>;
 
@@ -285,6 +287,7 @@ export function parseSimpleSpec(input: unknown): SpecResult {
   if (spec.type === "mindmap") return buildMindmapSpec(spec);
   if (spec.type === "class") return buildClasses(spec);
   if (spec.type === "state") return buildStates(spec);
+  if (spec.type === "sequence") return buildSequence(spec);
   return buildFlow(spec);
 }
 

@@ -24,10 +24,16 @@ export function useShortcuts(getCanvasSize: () => { width: number; height: numbe
       const mod = event.metaKey || event.ctrlKey;
       const key = event.key.toLowerCase();
 
-      // Gantt charts, kanban boards and roadmaps only share undo/redo, select all and delete;
-      // the rest is canvas-specific. Roadmaps also move selected items with the arrow keys.
+      // Gantt charts, kanban boards, roadmaps and sequence diagrams only share undo/redo, select
+      // all and delete; the rest is canvas-specific. Roadmaps also move selected items with the
+      // arrow keys; sequence diagrams handle their own extra keys in SequenceEditor.
       const chartType = state.diagram?.chartType;
-      if (chartType === "gantt" || chartType === "kanban" || chartType === "roadmap") {
+      if (
+        chartType === "gantt" ||
+        chartType === "kanban" ||
+        chartType === "roadmap" ||
+        chartType === "sequence"
+      ) {
         const ids = state.selection.taskIds;
         if (
           chartType === "roadmap" &&

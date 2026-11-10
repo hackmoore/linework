@@ -163,6 +163,18 @@ export function createDiagram(
           },
         }
       : {}),
+    ...(chartType === "sequence"
+      ? {
+          sequence: {
+            autonumber: false,
+            participants: [
+              { id: createId(), name: "User", kind: "actor" as const, color: "#1a56db" },
+              { id: createId(), name: "System", kind: "participant" as const, color: "#0f766e" },
+            ],
+            steps: [],
+          },
+        }
+      : {}),
     createdAt: now,
     updatedAt: now,
   };

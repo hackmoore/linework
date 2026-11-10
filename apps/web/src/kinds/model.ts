@@ -55,7 +55,9 @@ export interface KindModel {
   readonly loopFlow?: (diagram: Diagram) => "TB" | "LR";
 }
 
-/** Chart types drawn on the canvas, as opposed to gantt charts, kanban boards and roadmaps. */
+/** Chart types drawn on the canvas, as opposed to gantt charts, kanban boards, roadmaps and sequence diagrams. */
 export function isCanvasChart(chartType: ChartType): boolean {
-  return chartType !== "gantt" && chartType !== "kanban" && chartType !== "roadmap";
+  return (
+    chartType !== "gantt" && chartType !== "kanban" && chartType !== "roadmap" && chartType !== "sequence"
+  );
 }

@@ -8,6 +8,8 @@ import { KanbanEditor } from "../kanban/KanbanEditor";
 import { KanbanInspector } from "../kanban/KanbanInspector";
 import { RoadmapEditor } from "../roadmap/RoadmapEditor";
 import { RoadmapInspector } from "../roadmap/RoadmapInspector";
+import { SequenceEditor } from "../sequence/SequenceEditor";
+import { SequenceInspector } from "../sequence/SequenceInspector";
 import { Canvas } from "./Canvas";
 import { ExportMenu } from "./ExportMenu";
 import { LiveControls } from "../collab/LiveControls";
@@ -147,6 +149,13 @@ export function EditorPage(): ReactElement {
           <RoadmapEditor />
           <SidePanel newCommentPoint={() => ({ x: 0, y: 0 })}>
             <RoadmapInspector />
+          </SidePanel>
+        </div>
+      ) : chartType === "sequence" ? (
+        <div className="editor__body">
+          <SequenceEditor />
+          <SidePanel newCommentPoint={() => ({ x: 0, y: 0 })}>
+            <SequenceInspector />
           </SidePanel>
         </div>
       ) : chartType === "kanban" ? (

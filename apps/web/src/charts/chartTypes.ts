@@ -348,6 +348,42 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["state", "states"],
   },
+  sequence: {
+    id: "sequence",
+    name: "Sequence diagram",
+    tagline: "Show who talks to whom, in what order, to get something done.",
+    bestFor: ["API and service calls", "Login, checkout and other user flows", "Protocols and integrations"],
+    objects: [
+      {
+        name: "Participant",
+        description:
+          "A lifeline for a person, system or object. Actors, databases, queues and UML boundary, control and entity icons are available.",
+      },
+      {
+        name: "Message",
+        description:
+          "An arrow from one lifeline to another: a call (the sender waits), an async message, or a dashed reply.",
+      },
+      {
+        name: "Activation",
+        description: "A bar on a lifeline while it is busy handling a call.",
+      },
+      { name: "Note", description: "A comment next to or across lifelines." },
+      {
+        name: "Fragment",
+        description:
+          "A frame around steps: loop, alt (if / else), opt, par, critical, break, or a plain group.",
+      },
+    ],
+    tips: [
+      "Drag from one dashed lifeline to another to add a message at that height. Drag back to the same lifeline for a message to self.",
+      "Double-click a message, note or participant to change its text. Press M for the next message and N for a note.",
+      "Select a call and use + Reply to answer it. Up and down arrows move the selected step; left and right move a participant.",
+      "Select several messages, then pick + Fragment to put them in a loop or alternatives.",
+      "Edit the whole diagram as Mermaid text in the panel, or paste Mermaid sequenceDiagram text in My diagrams to import it.",
+    ],
+    item: ["message", "messages"],
+  },
   freeform: {
     id: "freeform",
     name: "Freeform diagram",
@@ -382,6 +418,7 @@ export const CHART_TYPE_ORDER: readonly ChartType[] = [
   "mindmap",
   "class",
   "state",
+  "sequence",
   "freeform",
 ];
 

@@ -6,8 +6,10 @@ import {
   type FlowchartData,
   type NetworkData,
   type RoadmapData,
+  type SequenceData,
   type KanbanData,
 } from "@linework/shared";
+import { balanceSteps } from "../sequence/model";
 
 /*
  * Element-level patches for live collaboration. Each change sends only the objects that
@@ -54,7 +56,9 @@ type CollectionName =
   | "network.entities"
   | "network.links"
   | "roadmap.lanes"
-  | "roadmap.items";
+  | "roadmap.items"
+  | "sequence.participants"
+  | "sequence.steps";
 const COLLECTIONS: readonly CollectionName[] = [
   "nodes",
   "edges",
@@ -70,6 +74,8 @@ const COLLECTIONS: readonly CollectionName[] = [
   "network.links",
   "roadmap.lanes",
   "roadmap.items",
+  "sequence.participants",
+  "sequence.steps",
 ];
 const ROADMAP_SCALARS = ["scale", "fiscalYearStart", "showToday"] as const;
 const FLOWCHART_SCALARS = ["direction", "laneStart"] as const;
@@ -96,6 +102,10 @@ function getCollection(d: Diagram, name: CollectionName): readonly Item[] {
       return d.roadmap?.lanes ?? [];
     case "roadmap.items":
       return d.roadmap?.items ?? [];
+    case "sequence.participants":
+      return d.sequence?.participants ?? [];
+    case "sequence.steps":
+      return d.sequence?.steps ?? [];
     default:
       return d[name];
   }
@@ -120,6 +130,8 @@ export function diffDiagrams(prev: Diagram, next: Diagram): DiagramPatch | null 
       if (!prev.roadmap || !same(prev.roadmap[key], next.roadmap[key]))
         set[`roadmap.${key}`] = next.roadmap[key];
   }
+  if (next.sequence && prev.sequence?.autonumber !== next.sequence.autonumber)
+    set["sequence.autonumber"] = next.sequence.autonumber;
   const collections: Record<string, CollectionPatch> = {};
   for (const name of COLLECTIONS) {
     const before = getCollection(prev, name);
@@ -249,6 +261,20 @@ export function applyPatch(doc: Diagram, patch: DiagramPatch): Diagram {
       if (`roadmap.${key}` in s) roadmap = { ...roadmap, [key]: s[`roadmap.${key}`] };
     next = { ...next, roadmap };
   }
+  const sequenceTouched =
+    COLLECTIONS.some((c) => c.startsWith("sequence.") && c in patch.collections) ||
+    "sequence.autonumber" in s;
+  if (doc.sequence || sequenceTouched) {
+    const base: SequenceData = doc.sequence ?? { autonumber: false, participants: [], steps: [] };
+    next = {
+      ...next,
+      sequence: {
+        autonumber: "sequence.autonumber" in s ? s["sequence.autonumber"] === true : base.autonumber,
+        participants: applyCollection(base.participants, patch.collections["sequence.participants"]),
+        steps: applyCollection(base.steps, patch.collections["sequence.steps"]),
+      },
+    };
+  }
   return repair(next);
 }
 
@@ -317,6 +343,12 @@ export function repair(d: Diagram): Diagram {
     );
     roadmap = { ...roadmap, items };
   }
+  // Steps about participants deleted concurrently go, and fragments split apart by concurrent
+  // edits are closed again.
+  const sequence = d.sequence && {
+    ...d.sequence,
+    steps: balanceSteps(d.sequence.steps, new Set(d.sequence.participants.map((p) => p.id))),
+  };
   // Details of entities or links deleted concurrently go with them.
   const edgeIds = new Set(edges.map((e) => e.id));
   const network = d.network && {
@@ -332,6 +364,7 @@ export function repair(d: Diagram): Diagram {
     ...(kanban ? { kanban } : {}),
     ...(network ? { network } : {}),
     ...(roadmap ? { roadmap } : {}),
+    ...(sequence ? { sequence } : {}),
   };
 }
 

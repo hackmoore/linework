@@ -1,0 +1,78 @@
+/* Sequence diagram editor. It reuses the Gantt toolbar and empty state. */
+.sequence {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+}
+.sequence__scroll {
+  position: relative;
+  flex: 1;
+  overflow: auto;
+  background: var(--color-surface-2);
+}
+.sequence__page {
+  position: relative;
+  margin: 1.5rem auto;
+  background: #ffffff;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+}
+.sequence__svg {
+  display: block;
+  user-select: none;
+}
+.sequence__svg [data-step-id],
+.sequence__svg .sequence__message {
+  cursor: pointer;
+}
+.sequence__svg .sequence__head {
+  cursor: grab;
+}
+.sequence__svg .sequence__lifeline {
+  cursor: crosshair;
+}
+.sequence__svg .sequence__lifeline:hover {
+  fill: rgb(79 70 229 / 8%);
+}
+.sequence__inline {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  padding: 0.2rem 0.35rem;
+  border: 2px solid #4f46e5;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #1f2937;
+  font: inherit;
+  font-size: 13px;
+  line-height: 16px;
+  resize: none;
+}
+.sequence__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.sequence__text {
+  width: 100%;
+  min-height: 12rem;
+  font-size: 0.78rem;
+  white-space: pre;
+}
+.select--sm {
+  width: auto;
+  height: 30px;
+  font-size: 0.85rem;
+}
+.sequence__hint {
+  max-width: 460px;
+  margin: 0 auto 1.5rem;
+  padding: 0 1rem;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+  text-align: center;
+}

@@ -5,6 +5,7 @@ import { classAi } from "../classes/ai";
 import { erAi } from "../er/ai";
 import { mindmapAi } from "../mindmap/ai";
 import { orgAi } from "../org/ai";
+import { sequenceAi } from "../sequence/ai";
 import { stateAi } from "../statemachine/ai";
 
 /**
@@ -26,4 +27,5 @@ export const KIND_AI: Partial<Record<ChartType, KindAi>> = {
   mindmap: mindmapAi,
   class: classAi,
   state: stateAi,
+  sequence: sequenceAi,
 };
