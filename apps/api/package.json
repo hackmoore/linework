@@ -1,0 +1,22 @@
+{
+  "name": "@linework/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Linework live-collaboration relay. Forwards end-to-end encrypted messages between people editing the same chart; it never sees chart content.",
+  "scripts": {
+    "dev": "node --watch src/main.ts",
+    "start": "node src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ws": "^8.22.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/ws": "^8.18.2",
+    "vitest": "^5.1.0"
+  }
+}
