@@ -6,6 +6,7 @@ import { withoutCards } from "../kanban/model";
 import { flowEdgeDefaults, flowNodeStyle } from "../flowchart/model";
 import { pruneNetwork } from "../network/model";
 import { withoutItems } from "../roadmap/model";
+import { kindModel } from "../kinds/registry";
 import { fitAllCompartments } from "../render/compartments";
 import { rectsIntersect, type Rect } from "../render/geometry";
 
@@ -271,7 +272,10 @@ export const useEditor = create<EditorState>()((set, get) => ({
   addNode(kind, cx, cy, overrides = {}) {
     const { diagram, activeLayerId } = get();
     const layerId = diagram ? usableLayerId(diagram, activeLayerId) : undefined;
-    const flowStyle = diagram?.chartType === "flowchart" ? flowNodeStyle(kind) : {};
+    const flowStyle =
+      diagram?.chartType === "flowchart"
+        ? flowNodeStyle(kind)
+        : (kindModel(diagram?.chartType)?.nodeStyle?.(kind) ?? {});
     const node = createNode(kind, cx, cy, { ...flowStyle, ...(layerId ? { layerId } : {}), ...overrides });
     get().commit((d) => ({ ...d, nodes: [...d.nodes, node] }));
     set({ selection: { ...EMPTY_SELECTION, nodeIds: [node.id] } });
@@ -290,7 +294,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
         ? flowEdgeDefaults(diagram, source)
         : diagram.chartType === "network"
           ? { arrowEnd: "none" }
-          : {},
+          : (kindModel(diagram.chartType)?.edgeDefaults?.(diagram, source, target) ?? {}),
     );
     get().commit((d) => ({ ...d, edges: [...d.edges, edge] }));
     set({ selection: { ...EMPTY_SELECTION, edgeIds: [edge.id] } });

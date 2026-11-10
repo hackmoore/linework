@@ -15,6 +15,7 @@ import { cardsToCsv } from "../kanban/io";
 import { linksToCsv } from "../network/io";
 import { roadmapToCsv } from "../roadmap/io";
 import { diagramToMermaid } from "../mermaid/mermaid";
+import { kindModel } from "../kinds/registry";
 import { shareLink } from "../share/link";
 import { useEditor } from "./store";
 
@@ -184,6 +185,20 @@ const SHARE_ACTIONS: readonly ExportAction[] = [
 
 const extraActions: ExportAction[] = [...SHARE_ACTIONS];
 
+/** Downloads a chart type adds, such as SQL for entity-relationship diagrams. */
+function kindActions(diagram: Diagram): ExportAction[] {
+  return (kindModel(diagram.chartType)?.exports ?? []).map((e) => ({
+    id: `kind-${e.id}`,
+    group: "Download",
+    label: e.label,
+    hint: e.hint,
+    run: async (d) => {
+      download(e.build(d), e.mime, `${safeFileName(d.title)}.${e.extension}`);
+      return Promise.resolve(undefined);
+    },
+  }));
+}
+
 /** Lets other features (Mermaid, sharing) add entries without this file importing them all. */
 export function registerExportAction(action: ExportAction): void {
   if (!extraActions.some((a) => a.id === action.id)) extraActions.push(action);
@@ -222,7 +237,9 @@ export function ExportMenu(): ReactElement {
   }, [message]);
 
   const actions = diagram
-    ? [...BASE_ACTIONS, ...extraActions].filter((a) => a.available?.(diagram) ?? true)
+    ? [...BASE_ACTIONS, ...kindActions(diagram), ...extraActions].filter(
+        (a) => a.available?.(diagram) ?? true,
+      )
     : [];
   const groups = (["Download", "Copy", "Share"] as const).filter((g) => actions.some((a) => a.group === g));
 

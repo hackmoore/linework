@@ -19,6 +19,7 @@ import { kanbanToMermaid, parseMermaidKanban } from "../kanban/io";
 import { roadmapToMermaid } from "../roadmap/io";
 import { tidyFlowchart } from "../flowchart/layout";
 import { createFlowchartData, createFlowLane, flowNodeStyle, laneOf } from "../flowchart/model";
+import { kindModel } from "../kinds/registry";
 import { boundsOf } from "../render/geometry";
 
 /*
@@ -605,6 +606,8 @@ function ganttToMermaid(diagram: Diagram): string {
 }
 
 export function diagramToMermaid(diagram: Diagram): string {
+  const kind = kindModel(diagram.chartType)?.toMermaid;
+  if (kind) return kind(diagram);
   if (diagram.chartType === "gantt") return ganttToMermaid(diagram);
   if (diagram.chartType === "kanban") return kanbanToMermaid(diagram);
   if (diagram.chartType === "roadmap" && diagram.roadmap)

@@ -1,10 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
-import { ENTITY_TYPES, type Diagram } from "@linework/shared";
+import { ENTITY_TYPES, type ChartType, type Diagram } from "@linework/shared";
 import { ICONS } from "../library/icons";
 import { todayIso } from "../gantt/model";
 import { parseSimpleSpec, SPEC_COLORS } from "../share/simpleSpec";
+import { KIND_AI } from "./kinds";
 
 /*
  * Optional AI chart generation, bring-your-own-key: the user's Anthropic API key is kept
@@ -18,7 +19,8 @@ import { parseSimpleSpec, SPEC_COLORS } from "../share/simpleSpec";
 export const AI_MODEL = "claude-opus-5-5";
 const KEY_STORAGE = "linework.anthropicApiKey";
 
-export type AiChartKind = "diagram" | "flowchart" | "gantt" | "kanban" | "network" | "roadmap";
+/** A chart type, or "diagram" for a freeform diagram. */
+export type AiChartKind = Exclude<ChartType, "freeform"> | "diagram";
 
 export function loadApiKey(): string {
   try {
@@ -214,6 +216,8 @@ function systemPrompt(kind: AiChartKind): string {
     "Keep labels short. Prefer 5-30 items; split very large requests into the most important parts.",
     `Today is ${todayIso()}.`,
   ];
+  const kindAi = kind === "diagram" ? undefined : KIND_AI[kind];
+  if (kindAi) return [...common, ...kindAi.prompt].join("\n");
   if (kind === "gantt") {
     return [
       ...common,
@@ -272,6 +276,8 @@ const stripNulls = <T extends Record<string, unknown>>(value: T): Partial<T> =>
 
 /** Converts structured output into the simple spec, dropping nulls and clamping numbers. */
 function toSpec(kind: AiChartKind, output: unknown): unknown {
+  const kindAi = kind === "diagram" ? undefined : KIND_AI[kind];
+  if (kindAi) return kindAi.toSpec(output);
   if (kind === "gantt") {
     const o = output as z.infer<typeof ganttOutput>;
     return {
@@ -387,8 +393,10 @@ export async function generateChart(
   if (!apiKey.trim()) return { ok: false, error: "Add your Anthropic API key first" };
   // The user's own key, used only from their browser: this is the case the SDK option exists for.
   const client = new Anthropic({ apiKey: apiKey.trim(), dangerouslyAllowBrowser: true });
-  const schema =
-    kind === "gantt"
+  const kindAi = kind === "diagram" ? undefined : KIND_AI[kind];
+  const schema: z.ZodType = kindAi
+    ? kindAi.output
+    : kind === "gantt"
       ? ganttOutput
       : kind === "kanban"
         ? kanbanOutput

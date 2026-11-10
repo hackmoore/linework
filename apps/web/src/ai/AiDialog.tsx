@@ -3,8 +3,14 @@ import { useNavigate } from "react-router";
 import { createId } from "../diagram/factory";
 import { saveDiagram } from "../storage/localStore";
 import { generateChart, loadApiKey, storeApiKey, type AiChartKind } from "./generate";
+import { KIND_AI } from "./kinds";
 
-const EXAMPLES: Readonly<Record<AiChartKind, string>> = {
+const kindLabel = (k: AiChartKind): string =>
+  KIND_LABELS[k] ?? (k === "diagram" ? "Diagram" : (KIND_AI[k]?.label ?? k));
+const kindExample = (k: AiChartKind): string =>
+  EXAMPLES[k] ?? (k === "diagram" ? "" : (KIND_AI[k]?.example ?? ""));
+
+const EXAMPLES: Readonly<Partial<Record<AiChartKind, string>>> = {
   gantt:
     "A 6-week plan to relaunch our marketing website: discovery, design, build, content, QA and launch. Team: Priya (design), Sam (dev), Lee (content).",
   kanban:
@@ -19,9 +25,17 @@ const EXAMPLES: Readonly<Record<AiChartKind, string>> = {
     "Architecture of a food delivery app: mobile app and web app, API gateway, orders, payments and notifications services, a Postgres database and a message queue.",
 };
 
-const AI_KINDS: readonly AiChartKind[] = ["flowchart", "gantt", "roadmap", "kanban", "network", "diagram"];
+const AI_KINDS: readonly AiChartKind[] = [
+  "flowchart",
+  "gantt",
+  "roadmap",
+  "kanban",
+  "network",
+  ...(Object.keys(KIND_AI) as AiChartKind[]),
+  "diagram",
+];
 
-const KIND_LABELS: Readonly<Record<AiChartKind, string>> = {
+const KIND_LABELS: Readonly<Partial<Record<AiChartKind, string>>> = {
   flowchart: "Flowchart",
   gantt: "Gantt",
   roadmap: "Roadmap",
@@ -100,29 +114,29 @@ export function AiDialog({
             ×
           </button>
         </div>
-        <div className="segmented segmented--full" role="radiogroup" aria-label="Chart type">
-          {AI_KINDS.map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="radio"
-              aria-checked={kind === k}
-              className={`segmented__option${kind === k ? " segmented__option--active" : ""}`}
-              onClick={() => {
-                setKind(k);
-              }}
-            >
-              {KIND_LABELS[k]}
-            </button>
-          ))}
-        </div>
+        <label className="field">
+          <span>Chart type</span>
+          <select
+            className="select"
+            value={kind}
+            onChange={(event) => {
+              setKind(event.target.value as AiChartKind);
+            }}
+          >
+            {AI_KINDS.map((k) => (
+              <option key={k} value={k}>
+                {kindLabel(k)}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="field">
           <span>Describe the chart</span>
           <textarea
             className="input"
             rows={5}
             required
-            placeholder={EXAMPLES[kind]}
+            placeholder={kindExample(kind)}
             value={description}
             onChange={(event) => {
               setDescription(event.target.value);

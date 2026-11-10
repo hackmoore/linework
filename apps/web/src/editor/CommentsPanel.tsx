@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import type { Diagram, DiagramComment } from "@linework/shared";
 import { colorFor, ensureDisplayName, useDisplayName } from "../collab/identity";
+import { isCanvasChart } from "../kinds/model";
 import { addComment, deleteComment, replyToComment, setCommentResolved } from "./comments";
 import { useEditor } from "./store";
 import { useUi } from "./ui";
@@ -8,12 +9,7 @@ import { useUi } from "./ui";
 const timeFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
 function targetName(diagram: Diagram, comment: DiagramComment): string {
-  if (!comment.targetId)
-    return diagram.chartType === "freeform" ||
-      diagram.chartType === "flowchart" ||
-      diagram.chartType === "network"
-      ? "Canvas"
-      : "Whole chart";
+  if (!comment.targetId) return isCanvasChart(diagram.chartType) ? "Canvas" : "Whole chart";
   const node = diagram.nodes.find((n) => n.id === comment.targetId);
   if (node) return (node.label.split("\n")[0] ?? "") || "Shape";
   const task = diagram.gantt?.tasks.find((t) => t.id === comment.targetId);

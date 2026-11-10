@@ -26,6 +26,8 @@ import { applyTheme, THEMES } from "./themes";
 import { flowActions } from "../flowchart/actions";
 import { FlowchartSettings, FlowStepSection } from "../flowchart/FlowchartPanel";
 import { EntitySection, LinkSection, NetworkSettings } from "../network/NetworkPanel";
+import { kindModel } from "../kinds/registry";
+import { kindUi } from "../kinds/ui";
 import { editableLayerIds, useEditor } from "./store";
 
 const SWATCHES = ["#1f2937", "#1a56db", "#1e7e34", "#b45309", "#b91c1c", "#6d28d9", "#ffffff"];
@@ -417,6 +419,11 @@ export function autoLayout(direction: LayoutDirection, ids?: readonly string[]):
     flowActions.tidy(ids);
     return;
   }
+  const tidy = kindModel(diagram.chartType)?.tidy;
+  if (tidy) {
+    state.commit((d) => tidy(d, direction));
+    return;
+  }
   const editable = editableLayerIds(diagram);
   const wanted = ids ? new Set(ids) : null;
   const nodes = diagram.nodes.filter(
@@ -644,8 +651,13 @@ export function Inspector(): ReactElement | null {
   const { setStyle, setBackground } = useEditor.getState();
   const flowchart = diagram.chartType === "flowchart";
   const network = diagram.chartType === "network";
+  const ui = kindUi(diagram.chartType);
+  const SelectionPanel = ui?.SelectionPanel;
+  const Settings = ui?.Settings;
+  const nothingSelected = nodes.length === 0 && edges.length === 0;
   return (
     <div className="inspector__content" aria-label="Properties">
+      {SelectionPanel && !nothingSelected && <SelectionPanel diagram={diagram} nodes={nodes} edges={edges} />}
       {flowchart && nodes.length > 0 && <FlowStepSection diagram={diagram} nodes={nodes} />}
       {network && nodes.length > 0 && <EntitySection diagram={diagram} nodes={nodes} />}
       {network && edges.length > 0 && <LinkSection diagram={diagram} edges={edges} />}
@@ -653,8 +665,9 @@ export function Inspector(): ReactElement | null {
       {edges.length > 0 && <EdgeInspector edges={edges} />}
       {flowchart && nodes.length === 0 && edges.length === 0 && <FlowchartSettings diagram={diagram} />}
       {network && nodes.length === 0 && edges.length === 0 && <NetworkSettings diagram={diagram} />}
+      {Settings && nothingSelected && <Settings diagram={diagram} />}
       {nodes.length === 0 && edges.length === 0 && (
-        <Section title={flowchart || network ? "Appearance" : "Diagram"}>
+        <Section title={flowchart || network || ui ? "Appearance" : "Diagram"}>
           <div className="inspector__field">
             <span className="inspector__label">Style</span>
             <div className="style-options" role="radiogroup" aria-label="Diagram style">
@@ -707,7 +720,7 @@ export function Inspector(): ReactElement | null {
               ))}
             </div>
           </div>
-          {!flowchart && !network && (
+          {!flowchart && !network && !ui && (
             <div className="inspector__field">
               <span className="inspector__label">Automatic layout</span>
               <div className="inspector__actions">

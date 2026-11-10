@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { copySelection, cutSelection, paste } from "./clipboard";
 import { useEditor } from "./store";
 import { useUi } from "./ui";
+import { kindUi } from "../kinds/ui";
 import { toolsFor } from "./ToolPalette";
 import { flowActions } from "../flowchart/actions";
 import { shiftItems } from "../roadmap/actions";
@@ -78,7 +79,16 @@ export function useShortcuts(getCanvasSize: () => { width: number; height: numbe
         const only = state.selection.nodeIds.length === 1 ? state.selection.nodeIds[0] : undefined;
         if (only) flowActions.addNextStep(only, "rectangle");
         else return;
+      } else if (key === "tab" && !event.shiftKey && kindUi(state.diagram?.chartType)?.onTab) {
+        const only = state.selection.nodeIds.length === 1 ? state.selection.nodeIds[0] : undefined;
+        if (!only || !kindUi(state.diagram?.chartType)?.onTab?.(only)) return;
       } else if (key === "enter") {
+        const only = state.selection.nodeIds.length === 1 ? state.selection.nodeIds[0] : undefined;
+        if (!only) return;
+        // Some chart types use Enter to add a sibling; F2 or double-click still edits.
+        if (event.shiftKey || !kindUi(state.diagram?.chartType)?.onEnter?.(only))
+          state.startEditing({ nodeId: only });
+      } else if (key === "f2") {
         const only = state.selection.nodeIds.length === 1 ? state.selection.nodeIds[0] : undefined;
         if (only) state.startEditing({ nodeId: only });
         else return;
