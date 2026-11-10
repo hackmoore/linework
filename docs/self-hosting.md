@@ -56,6 +56,28 @@ location / {
 }
 ```
 
+### Traefik
+
+With Traefik, don't publish any ports. Set `LINEWORK_SITE_ADDRESS=:80`, attach the `web` service to Traefik's Docker network and add router labels. The sample file has them commented out:
+
+```yaml
+services:
+  web:
+    networks: [default, traefik]
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik
+      - traefik.http.routers.linework.rule=Host(`linework.example.com`)
+      - traefik.http.routers.linework.entrypoints=web
+      - traefik.http.services.linework.loadbalancer.server.port=80
+
+networks:
+  traefik:
+    external: true
+```
+
+Replace `traefik` with the name of the network Traefik uses. Traefik forwards WebSockets without extra settings. Set `LINEWORK_SITE_URL` to the `https://` address visitors use, even when Traefik's entrypoint is plain HTTP behind another TLS proxy, because the relay checks the browser's origin.
+
 ## Settings
 
 | Variable                | Purpose                                                                                                          |

@@ -27,6 +27,15 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+    # Behind Traefik instead: set LINEWORK_SITE_ADDRESS=:80, remove "ports" above,
+    # join Traefik's network and uncomment these labels (see docs/self-hosting.md).
+    # networks: [default, traefik]
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.docker.network=traefik
+    #   - traefik.http.routers.linework.rule=Host(`linework.example.com`)
+    #   - traefik.http.routers.linework.entrypoints=web
+    #   - traefik.http.services.linework.loadbalancer.server.port=80
 
   api:
     build:
