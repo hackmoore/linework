@@ -1,0 +1,29 @@
+# Serves the Linework web app and forwards /api (collaboration WebSockets) to the relay.
+#
+# LINEWORK_SITE_ADDRESS is a domain (Caddy then gets an HTTPS certificate automatically)
+# or a bare port such as :80 when another proxy in front of this one handles HTTPS.
+{$LINEWORK_SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy no-referrer
+		X-Frame-Options SAMEORIGIN
+		-Server
+	}
+
+	handle /api/* {
+		reverse_proxy api:8787
+	}
+
+	handle {
+		root * /srv
+		@assets path /assets/*
+		header @assets Cache-Control "public, max-age=31536000, immutable"
+		@html path / /index.html
+		header @html Cache-Control "no-cache"
+		# Client-side routes (/new, /edit/...) fall back to the app shell.
+		try_files {path} /index.html
+		file_server
+	}
+}
