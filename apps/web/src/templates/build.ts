@@ -9,6 +9,7 @@ import type {
   RoadmapItem,
   ShapeKind,
 } from "@linework/shared";
+import { architectureTemplate } from "../architecture/templates";
 import { createDiagram, createEdge, createNode } from "../diagram/factory";
 import type { StyleId } from "../diagram/styles";
 import {
@@ -59,8 +60,6 @@ class TemplateBuilder {
 }
 
 const BLUE = { fill: "#e8f0fe", stroke: "#1a56db" };
-const GREEN = { fill: "#e6f4ea", stroke: "#1e7e34" };
-const AMBER = { fill: "#fff4e0", stroke: "#b45309" };
 const PURPLE = { fill: "#f1ebff", stroke: "#6d28d9" };
 const GREY = { fill: "#f3f4f6", stroke: "#4b5563" };
 
@@ -107,23 +106,6 @@ function approval(b: TemplateBuilder): void {
     .edge("record", "end", ELBOW);
 }
 
-function architecture(b: TemplateBuilder): void {
-  b.node("users", "ellipse", 100, 230, "Users", GREY)
-    .node("vpc", "container", 520, 230, "Cloud", { width: 560, height: 380 })
-    .node("cdn", "rectangle", 330, 130, "CDN", BLUE)
-    .node("api", "rounded", 520, 230, "API service", PURPLE)
-    .node("worker", "rounded", 520, 360, "Worker", PURPLE)
-    .node("queue", "parallelogram", 330, 360, "Queue", AMBER)
-    .node("db", "cylinder", 710, 230, "Database", GREEN)
-    .node("cache", "cylinder", 710, 360, "Cache", { ...GREEN, height: 90 })
-    .edge("users", "cdn")
-    .edge("cdn", "api", { label: "HTTPS" })
-    .edge("api", "db")
-    .edge("api", "queue", { strokePattern: "dashed" })
-    .edge("queue", "worker", { strokePattern: "dashed" })
-    .edge("worker", "cache");
-}
-
 function orgChart(b: TemplateBuilder): void {
   b.node("lead", "rounded", 400, 60, "Project lead", PURPLE)
     .node("design", "rounded", 160, 200, "Design", BLUE)
@@ -143,7 +125,6 @@ function orgChart(b: TemplateBuilder): void {
 }
 
 const BUILDERS: Readonly<Partial<Record<TemplateId, (b: TemplateBuilder) => void>>> = {
-  architecture,
   "org-chart": orgChart,
 };
 
@@ -246,6 +227,13 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
   }
   if (templateId === "network-blank" || templateId === "network-investigation") {
     return networkTemplate(templateId, styleId, info?.name ?? "Network map");
+  }
+  if (templateId === "architecture" || templateId === "architecture-blank") {
+    return architectureTemplate(
+      styleId,
+      info?.name ?? "System architecture",
+      templateId === "architecture-blank",
+    );
   }
   if (templateId === "flowchart-blank" || templateId === "flowchart" || templateId === "flowchart-approval") {
     return flowchartTemplate(templateId, styleId, info?.name ?? "Flowchart");

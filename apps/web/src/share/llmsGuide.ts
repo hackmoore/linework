@@ -15,7 +15,7 @@ export function llmsGuide({ origin, iconIds }: GuideOptions): string {
   const base = origin || "https://<this site>";
   return `# Linework: instructions for AI assistants
 
-> Linework is a free, open source editor for flowcharts, network maps, diagrams, Gantt charts, roadmaps and kanban boards. It runs in the browser
+> Linework is a free, open source editor for flowcharts, network maps, architecture diagrams, Gantt charts, roadmaps, kanban boards and more. It runs in the browser
 > with no sign-in. You can create a chart for a user by giving them a link. When they open
 > it, the chart appears in the editor, where they can edit it, save it locally and export
 > PNG, SVG, PDF, CSV, MS Project XML or Mermaid.
@@ -246,6 +246,33 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
   unconfirmed; tentative), \`direction\` (none, the default; forward; both), \`date\` and
   \`endDate\` (YYYY-MM-DD).
 - Only include people and facts the user gave you. Never invent personal details.
+
+### Architecture diagram (C4 system context, container or component diagram)
+
+    {
+      "type": "architecture",
+      "title": "Online shop",
+      "elements": [
+        { "id": "customer", "name": "Customer", "type": "person", "description": "Buys products" },
+        { "id": "web", "name": "Web shop", "type": "container", "technology": "React",
+          "description": "Shop in the browser", "boundary": "Online shop" },
+        { "id": "db", "name": "Database", "type": "database", "technology": "PostgreSQL",
+          "boundary": "Online shop" },
+        { "id": "pay", "name": "Payment provider", "type": "system", "external": true }
+      ],
+      "relationships": [
+        { "from": "customer", "to": "web", "label": "Shops using", "technology": "HTTPS" },
+        { "from": "web", "to": "db", "label": "Reads and writes", "technology": "SQL" },
+        { "from": "web", "to": "pay", "label": "Takes payments using" }
+      ]
+    }
+
+- Elements need a unique \`id\`. \`type\`: person, system, container (the default), database
+  or component. Optional: \`name\`, \`technology\` (containers, databases and components),
+  \`description\`, \`external\` (true for people and systems outside the one described) and
+  \`boundary\` (the name of the system the element sits inside; drawn as a dashed box).
+- Relationships: \`from\`, \`to\`, \`label\` (what happens), \`technology\` (such as JSON/HTTPS).
+- \`direction\`: TB (default) or LR.
 
 ## Rules
 

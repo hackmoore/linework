@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import type { ChartType } from "@linework/shared";
+import { architectureAi } from "../architecture/ai";
 
 /**
  * How "Generate with AI" handles a node-and-edge chart type: the structured output Claude
@@ -13,4 +14,6 @@ export interface KindAi {
   readonly toSpec: (output: unknown) => unknown;
 }
 
-export const KIND_AI: Partial<Record<ChartType, KindAi>> = {};
+export const KIND_AI: Partial<Record<ChartType, KindAi>> = {
+  architecture: architectureAi,
+};

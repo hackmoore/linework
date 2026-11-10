@@ -35,6 +35,7 @@ import {
   DEFAULT_DAYS as ROADMAP_DAYS,
 } from "../roadmap/model";
 import { createFlowchartData, createFlowLane, DEFAULT_LANE_SIZE, flowNodeStyle } from "../flowchart/model";
+import { architectureSpecSchema, buildArchitecture } from "../architecture/spec";
 import { ICONS } from "../library/icons";
 import { boundsOf } from "../render/geometry";
 
@@ -248,6 +249,7 @@ const specSchema = z.discriminatedUnion("type", [
   kanbanSchema,
   networkSchema,
   roadmapSchema,
+  architectureSpecSchema,
 ]);
 export type SimpleSpec = z.input<typeof specSchema>;
 
@@ -267,6 +269,7 @@ export function parseSimpleSpec(input: unknown): SpecResult {
   if (spec.type === "kanban") return buildKanban(spec);
   if (spec.type === "network") return buildNetwork(spec);
   if (spec.type === "roadmap") return { ok: true, diagram: buildRoadmap(spec) };
+  if (spec.type === "architecture") return buildArchitecture(spec);
   return buildFlow(spec);
 }
 

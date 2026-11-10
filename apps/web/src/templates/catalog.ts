@@ -15,6 +15,7 @@ export const TEMPLATE_IDS = [
   "network-blank",
   "network-investigation",
   "roadmap-blank",
+  "architecture-blank",
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -113,11 +114,19 @@ export const TEMPLATE_CATALOG: readonly TemplateInfo[] = [
   },
   {
     id: "architecture",
-    chartType: "freeform",
+    chartType: "architecture",
     name: "System architecture",
-    description: "Services, data stores and the boundaries between them.",
+    description: "A C4 container diagram: an online shop's apps, services and database, and who uses them.",
     category: "Software design",
     blank: false,
+  },
+  {
+    id: "architecture-blank",
+    chartType: "architecture",
+    name: "Blank architecture diagram",
+    description: "An empty C4 diagram, ready for people, systems and containers.",
+    category: "Software design",
+    blank: true,
   },
 
   {

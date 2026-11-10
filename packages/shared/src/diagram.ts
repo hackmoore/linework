@@ -18,7 +18,15 @@ export const DIAGRAM_FORMAT_VERSION = 2;
  * nodes and edges too, with the details they need kept on the shapes themselves (`meta`, and
  * compartments written into table and class labels).
  */
-export const CHART_TYPES = ["freeform", "gantt", "kanban", "flowchart", "network", "roadmap"] as const;
+export const CHART_TYPES = [
+  "freeform",
+  "gantt",
+  "kanban",
+  "flowchart",
+  "network",
+  "roadmap",
+  "architecture",
+] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
 
 export const SHAPE_KINDS = [

@@ -169,11 +169,55 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["entity", "entities"],
   },
+  architecture: {
+    id: "architecture",
+    name: "Architecture diagram",
+    tagline: "Describe a software system with the C4 model: people, systems, containers and components.",
+    bestFor: [
+      "System context and container diagrams",
+      "Onboarding engineers to a codebase",
+      "Design reviews and architecture decision records",
+    ],
+    objects: [
+      { name: "Person", description: "Someone who uses the system, such as a customer or an administrator." },
+      {
+        name: "Software system",
+        description: "The system being described, or another one it works with. Grey means external.",
+      },
+      {
+        name: "Container",
+        description: "Something that runs or stores data inside a system: a web app, an API, a mobile app.",
+      },
+      { name: "Database", description: "A container that stores data, such as a PostgreSQL database." },
+      {
+        name: "Component",
+        description: "A part inside a container, such as a controller or a service class.",
+      },
+      {
+        name: "Boundary",
+        description: "A dashed box around the containers or components that belong to one system.",
+      },
+      {
+        name: "Relationship",
+        description:
+          "An arrow saying what one element does with another, and how, such as 'Reads from [SQL]'.",
+      },
+    ],
+    tips: [
+      "Add people, systems and containers from the toolbar, then drag the dot on an element's edge to another to connect them.",
+      "Start with a system context diagram. Draw the containers of one system in a new diagram once the context is clear.",
+      "Give every element a one-line description and every container its technology. Checks lists what's missing.",
+      "Label every arrow with what happens, from the source's point of view, like 'Sends emails using'.",
+      "Drag elements into a boundary and Tidy up keeps them together.",
+      "Export to Mermaid C4 to keep the diagram next to your code.",
+    ],
+    item: ["element", "elements"],
+  },
   freeform: {
     id: "freeform",
     name: "Freeform diagram",
     tagline: "Shapes and connectors on an open canvas.",
-    bestFor: ["System architecture", "Org charts", "Whiteboard sketches and anything else"],
+    bestFor: ["Whiteboard sketches", "Diagrams that don't fit another type", "Anything else"],
     objects: [
       { name: "Shape", description: "Rectangles, decisions, databases, sticky notes, groups and text." },
       {
@@ -197,6 +241,7 @@ export const CHART_TYPE_ORDER: readonly ChartType[] = [
   "kanban",
   "flowchart",
   "network",
+  "architecture",
   "freeform",
 ];
 

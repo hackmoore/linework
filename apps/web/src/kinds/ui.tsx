@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import type { ChartType, Diagram, DiagramEdge, DiagramNode } from "@linework/shared";
+import { architectureUi } from "../architecture/ArchitecturePanel";
 import type { ToolDef } from "../editor/tools";
 
 export interface SelectionPanelProps {
@@ -22,7 +23,9 @@ export interface KindUi {
   readonly onEnter?: (nodeId: string) => boolean;
 }
 
-const UIS: Partial<Record<ChartType, KindUi>> = {};
+const UIS: Partial<Record<ChartType, KindUi>> = {
+  architecture: architectureUi,
+};
 
 export function kindUi(chartType: ChartType | undefined): KindUi | undefined {
   return chartType ? UIS[chartType] : undefined;
