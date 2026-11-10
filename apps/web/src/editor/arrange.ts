@@ -133,17 +133,32 @@ export function layeredLayout(
     incoming.get(e.target)?.push(e.source);
   }
 
-  // Longest-path ranking; edges that close a cycle are ignored.
+  // Break cycles first: a depth-first search from the sources (nodes nothing points to)
+  // marks edges that lead back to a node on the current path. Starting from sources means
+  // a loop back to an earlier step is the edge dropped, not the edge into the loop.
+  const backEdges = new Set<string>();
+  const state = new Map<string, "active" | "done">();
+  const visit = (id: string): void => {
+    state.set(id, "active");
+    for (const next of outgoing.get(id) ?? []) {
+      const s = state.get(next);
+      if (s === "active") backEdges.add(`${id}\u0000${next}`);
+      else if (s === undefined) visit(next);
+    }
+    state.set(id, "done");
+  };
+  const sources = nodes.filter((n) => (incoming.get(n.id) ?? []).length === 0);
+  for (const n of [...sources, ...nodes]) if (!state.has(n.id)) visit(n.id);
+
+  // Longest-path ranking over the remaining (acyclic) edges.
   const rank = new Map<string, number>();
-  const visiting = new Set<string>();
   const rankOf = (id: string): number => {
     const known = rank.get(id);
     if (known !== undefined) return known;
-    if (visiting.has(id)) return 0;
-    visiting.add(id);
+    rank.set(id, 0);
     let r = 0;
-    for (const pred of incoming.get(id) ?? []) if (!visiting.has(pred)) r = Math.max(r, rankOf(pred) + 1);
-    visiting.delete(id);
+    for (const pred of incoming.get(id) ?? [])
+      if (!backEdges.has(`${pred}\u0000${id}`)) r = Math.max(r, rankOf(pred) + 1);
     rank.set(id, r);
     return r;
   };
