@@ -2,6 +2,7 @@ import type { z } from "zod";
 import type { ChartType } from "@linework/shared";
 import { architectureAi } from "../architecture/ai";
 import { erAi } from "../er/ai";
+import { mindmapAi } from "../mindmap/ai";
 import { orgAi } from "../org/ai";
 
 /**
@@ -20,4 +21,5 @@ export const KIND_AI: Partial<Record<ChartType, KindAi>> = {
   architecture: architectureAi,
   er: erAi,
   org: orgAi,
+  mindmap: mindmapAi,
 };

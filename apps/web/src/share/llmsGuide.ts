@@ -313,6 +313,23 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
   open position).
 - \`direction\`: TB (default) or LR.
 
+### Mind map (brainstorm, notes, breaking down a topic)
+
+    {
+      "type": "mindmap",
+      "root": "Podcast launch",
+      "branches": [
+        { "text": "Audience", "children": [{ "text": "Developers" }, { "text": "Designers" }] },
+        { "text": "Format", "color": "purple", "children": [{ "text": "Weekly, 30 minutes" }] },
+        { "text": "Promotion" }
+      ]
+    }
+
+- \`root\`: the central topic. \`branches\`: topics with \`text\` and optional \`children\`
+  (nested as deep as needed) and \`color\` (${["blue", "teal", "amber", "pink", "purple", "cyan", "green", "red"].join(", ")}).
+- \`layout\`: balanced (default, branches on both sides) or right.
+- Mermaid \`mindmap\` text and Markdown bulleted lists also import as mind maps.
+
 ## Rules
 
 1. Give the user the full link as a clickable link. Don't show the encoded payload separately.

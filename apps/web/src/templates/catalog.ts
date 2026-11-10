@@ -19,6 +19,8 @@ export const TEMPLATE_IDS = [
   "er",
   "er-blank",
   "org-blank",
+  "mindmap",
+  "mindmap-blank",
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -172,6 +174,22 @@ export const TEMPLATE_CATALOG: readonly TemplateInfo[] = [
       "A small product company: leadership, engineering, design and operations, with an open role.",
     category: "Project management",
     blank: false,
+  },
+  {
+    id: "mindmap",
+    chartType: "mindmap",
+    name: "Launch brainstorm",
+    description: "A mind map of a product launch: audience, message, channels, timeline, success and risks.",
+    category: "General",
+    blank: false,
+  },
+  {
+    id: "mindmap-blank",
+    chartType: "mindmap",
+    name: "Blank mind map",
+    description: "A central topic, ready to branch out from.",
+    category: "General",
+    blank: true,
   },
   {
     id: "org-blank",

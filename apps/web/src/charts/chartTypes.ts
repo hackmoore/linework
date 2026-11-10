@@ -264,6 +264,24 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["person", "people"],
   },
+  mindmap: {
+    id: "mindmap",
+    name: "Mind map",
+    tagline: "Brainstorm around a central idea, branching out into topics and subtopics.",
+    bestFor: ["Brainstorming and planning", "Note-taking and study", "Breaking a big problem into parts"],
+    objects: [
+      { name: "Central topic", description: "The idea the map is about, in the middle." },
+      { name: "Main branch", description: "A big theme off the central topic, with its own colour." },
+      { name: "Subtopic", description: "A detail under a branch. Go as deep as you like." },
+    ],
+    tips: [
+      "Select a topic and press Tab to add a subtopic, or Enter to add one next to it, then just type.",
+      "The map lays itself out as you go. Choose Both sides or To the right in the panel.",
+      "Delete branch removes a topic and everything under it.",
+      "Paste or import a Markdown bulleted list to turn notes into a map, and export the map back as an outline.",
+    ],
+    item: ["topic", "topics"],
+  },
   freeform: {
     id: "freeform",
     name: "Freeform diagram",
@@ -295,6 +313,7 @@ export const CHART_TYPE_ORDER: readonly ChartType[] = [
   "architecture",
   "er",
   "org",
+  "mindmap",
   "freeform",
 ];
 

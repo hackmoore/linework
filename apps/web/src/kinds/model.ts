@@ -43,6 +43,8 @@ export interface KindModel {
   readonly edgeDefaults?: (diagram: Diagram, source: string, target: string) => Partial<DiagramEdge>;
   /** Automatic layout. Direction is a hint from the inspector's layout buttons. */
   readonly tidy?: (diagram: Diagram, direction?: LayoutDirection) => Diagram;
+  /** Keeps derived styling (sizes, colours) in step after every change. Must be cheap. */
+  readonly normalize?: (diagram: Diagram) => Diagram;
   readonly toMermaid?: (diagram: Diagram) => string;
   readonly exports?: readonly KindExport[];
   readonly importers?: readonly KindImporter[];

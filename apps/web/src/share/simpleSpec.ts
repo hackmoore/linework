@@ -38,6 +38,7 @@ import { createFlowchartData, createFlowLane, DEFAULT_LANE_SIZE, flowNodeStyle }
 import { architectureSpecSchema, buildArchitecture } from "../architecture/spec";
 import { buildEr, erSpecSchema } from "../er/spec";
 import { ICONS } from "../library/icons";
+import { buildMindmapSpec, mindmapSpecSchema } from "../mindmap/spec";
 import { buildOrgSpec, orgSpecSchema } from "../org/spec";
 import { boundsOf } from "../render/geometry";
 
@@ -254,6 +255,7 @@ const specSchema = z.discriminatedUnion("type", [
   architectureSpecSchema,
   erSpecSchema,
   orgSpecSchema,
+  mindmapSpecSchema,
 ]);
 export type SimpleSpec = z.input<typeof specSchema>;
 
@@ -276,6 +278,7 @@ export function parseSimpleSpec(input: unknown): SpecResult {
   if (spec.type === "architecture") return buildArchitecture(spec);
   if (spec.type === "er") return buildEr(spec);
   if (spec.type === "org") return buildOrgSpec(spec);
+  if (spec.type === "mindmap") return buildMindmapSpec(spec);
   return buildFlow(spec);
 }
 

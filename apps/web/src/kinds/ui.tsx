@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import type { ChartType, Diagram, DiagramEdge, DiagramNode } from "@linework/shared";
 import { architectureUi } from "../architecture/ArchitecturePanel";
 import { erUi } from "../er/ErPanel";
+import { mindmapUi } from "../mindmap/MindmapPanel";
 import { orgUi } from "../org/OrgPanel";
 import type { ToolDef } from "../editor/tools";
 
@@ -29,6 +30,7 @@ const UIS: Partial<Record<ChartType, KindUi>> = {
   architecture: architectureUi,
   er: erUi,
   org: orgUi,
+  mindmap: mindmapUi,
 };
 
 export function kindUi(chartType: ChartType | undefined): KindUi | undefined {

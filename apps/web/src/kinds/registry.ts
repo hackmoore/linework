@@ -1,6 +1,7 @@
 import type { ChartType } from "@linework/shared";
 import { architectureModel } from "../architecture/model";
 import { erModel } from "../er/model";
+import { mindmapModel } from "../mindmap/model";
 import { orgModel } from "../org/model";
 import type { KindImporter, KindModel } from "./model";
 
@@ -9,6 +10,7 @@ const MODELS: Partial<Record<ChartType, KindModel>> = {
   architecture: architectureModel,
   er: erModel,
   org: orgModel,
+  mindmap: mindmapModel,
 };
 
 export function kindModel(chartType: ChartType | undefined): KindModel | undefined {

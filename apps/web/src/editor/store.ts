@@ -10,6 +10,11 @@ import { kindModel } from "../kinds/registry";
 import { fitAllCompartments } from "../render/compartments";
 import { rectsIntersect, type Rect } from "../render/geometry";
 
+function normalize(diagram: Diagram): Diagram {
+  const fitted = fitAllCompartments(diagram);
+  return kindModel(fitted.chartType)?.normalize?.(fitted) ?? fitted;
+}
+
 export type Tool = "select" | "connect" | ShapeKind;
 
 export interface Viewport {
@@ -157,8 +162,8 @@ export const useEditor = create<EditorState>()((set, get) => ({
     if (!diagram) return;
     const recipeResult = recipe(diagram);
     if (recipeResult === diagram) return;
-    // Table and class shapes always fit their label.
-    const next = fitAllCompartments(recipeResult);
+    // Table and class shapes always fit their label, and chart types keep their styling in step.
+    const next = normalize(recipeResult);
     set({
       diagram: touch(next),
       past: [...past, diagram].slice(-HISTORY_LIMIT),
@@ -178,7 +183,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     const { diagram } = get();
     if (!diagram) return;
     const next = recipe(diagram);
-    if (next !== diagram) set({ diagram: touch(fitAllCompartments(next)) });
+    if (next !== diagram) set({ diagram: touch(normalize(next)) });
   },
 
   applyRemote(transform, replace = false) {
