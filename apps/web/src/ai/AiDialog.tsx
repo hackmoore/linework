@@ -6,7 +6,7 @@ import { generateChart, loadApiKey, storeApiKey, type AiChartKind } from "./gene
 import { KIND_AI } from "./kinds";
 
 const kindLabel = (k: AiChartKind): string =>
-  KIND_LABELS[k] ?? (k === "diagram" ? "Diagram" : (KIND_AI[k]?.label ?? k));
+  KIND_LABELS[k] ?? (k === "diagram" ? "Freeform diagram" : (KIND_AI[k]?.label ?? k));
 const kindExample = (k: AiChartKind): string =>
   EXAMPLES[k] ?? (k === "diagram" ? "" : (KIND_AI[k]?.example ?? ""));
 
@@ -41,7 +41,7 @@ const KIND_LABELS: Readonly<Partial<Record<AiChartKind, string>>> = {
   roadmap: "Roadmap",
   kanban: "Kanban",
   network: "Network",
-  diagram: "Diagram",
+  diagram: "Freeform diagram",
 };
 
 /** "Generate with AI" dialog: describe a chart, get a new diagram. Uses the user's own Anthropic API key. */
