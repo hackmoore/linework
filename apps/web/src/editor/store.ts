@@ -4,6 +4,7 @@ import { createEdge, createId, createNode } from "../diagram/factory";
 import { withoutTasks } from "../gantt/model";
 import { withoutCards } from "../kanban/model";
 import { flowEdgeDefaults, flowNodeStyle } from "../flowchart/model";
+import { pruneNetwork } from "../network/model";
 import { rectsIntersect, type Rect } from "../render/geometry";
 
 export type Tool = "select" | "connect" | ShapeKind;
@@ -278,7 +279,11 @@ export const useEditor = create<EditorState>()((set, get) => ({
     const edge = createEdge(
       source,
       target,
-      diagram.chartType === "flowchart" ? flowEdgeDefaults(diagram, source) : {},
+      diagram.chartType === "flowchart"
+        ? flowEdgeDefaults(diagram, source)
+        : diagram.chartType === "network"
+          ? { arrowEnd: "none" }
+          : {},
     );
     get().commit((d) => ({ ...d, edges: [...d.edges, edge] }));
     set({ selection: { ...EMPTY_SELECTION, edgeIds: [edge.id] } });
@@ -310,21 +315,23 @@ export const useEditor = create<EditorState>()((set, get) => ({
     const edgeIds = new Set(selection.edgeIds);
     const taskIds = new Set(selection.taskIds);
     const cardIds = new Set(selection.cardIds);
-    get().commit((d) => ({
-      ...d,
-      // Dependencies on deleted tasks go too, so the plan stays valid.
-      gantt: d.gantt && withoutTasks(d.gantt, taskIds),
-      kanban: d.kanban && withoutCards(d.kanban, cardIds),
-      // Comments about deleted objects go with them.
-      comments: d.comments.filter(
-        (c) =>
-          c.targetId === null ||
-          (!nodeIds.has(c.targetId) && !taskIds.has(c.targetId) && !cardIds.has(c.targetId)),
-      ),
-      nodes: d.nodes.filter((n) => !nodeIds.has(n.id)),
-      // Edges attached to deleted nodes go too, so the document stays valid.
-      edges: d.edges.filter((e) => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target)),
-    }));
+    get().commit((d) =>
+      pruneNetwork({
+        ...d,
+        // Dependencies on deleted tasks go too, so the plan stays valid.
+        gantt: d.gantt && withoutTasks(d.gantt, taskIds),
+        kanban: d.kanban && withoutCards(d.kanban, cardIds),
+        // Comments about deleted objects go with them.
+        comments: d.comments.filter(
+          (c) =>
+            c.targetId === null ||
+            (!nodeIds.has(c.targetId) && !taskIds.has(c.targetId) && !cardIds.has(c.targetId)),
+        ),
+        nodes: d.nodes.filter((n) => !nodeIds.has(n.id)),
+        // Edges attached to deleted nodes go too, so the document stays valid.
+        edges: d.edges.filter((e) => !edgeIds.has(e.id) && !nodeIds.has(e.source) && !nodeIds.has(e.target)),
+      }),
+    );
     set({ selection: EMPTY_SELECTION, editingNodeId: null, editingEdgeId: null });
   },
 

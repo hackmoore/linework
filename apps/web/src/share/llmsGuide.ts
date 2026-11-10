@@ -15,7 +15,7 @@ export function llmsGuide({ origin, iconIds }: GuideOptions): string {
   const base = origin || "https://<this site>";
   return `# Linework: instructions for AI assistants
 
-> Linework is a free, open source editor for flowcharts, diagrams, Gantt charts and kanban boards. It runs in the browser
+> Linework is a free, open source editor for flowcharts, network maps, diagrams, Gantt charts and kanban boards. It runs in the browser
 > with no sign-in. You can create a chart for a user by giving them a link. When they open
 > it, the chart appears in the editor, where they can edit it, save it locally and export
 > PNG, SVG, PDF, CSV, MS Project XML or Mermaid.
@@ -194,6 +194,29 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
   \`tags\` (up to 10 short words), \`priority\` (low, medium, high, urgent), \`color\`.
 - \`lanes\` (optional): swimlane rows such as teams or clients. Put a card in one with
   \`lane\`. Leave lanes out for a simple board.
+
+### Network map (link analysis, investigation, stakeholders, ownership)
+
+    {
+      "type": "network",
+      "title": "Northgate links",
+      "entities": [
+        { "id": "alex", "name": "Alex Mercer", "type": "person", "details": { "Role": "Director" } },
+        { "id": "ng", "name": "Northgate Trading Ltd", "type": "organisation" },
+        { "id": "p1", "name": "07700 900123", "type": "phone" }
+      ],
+      "links": [
+        { "from": "alex", "to": "ng", "label": "director of", "date": "2024-02-01" },
+        { "from": "alex", "to": "p1", "label": "uses", "strength": "unconfirmed" }
+      ]
+    }
+
+- Entities need a unique \`id\`. \`name\` defaults to the id. \`type\`: ${["person", "organisation", "phone", "email", "account", "vehicle", "location", "website", "device", "document", "event", "other"].join(", ")}.
+- \`details\`: facts as name-value pairs. \`notes\`: free text.
+- Links: \`from\`, \`to\`, \`label\` (the relationship), \`strength\` (confirmed, the default;
+  unconfirmed; tentative), \`direction\` (none, the default; forward; both), \`date\` and
+  \`endDate\` (YYYY-MM-DD).
+- Only include people and facts the user gave you. Never invent personal details.
 
 ## Rules
 

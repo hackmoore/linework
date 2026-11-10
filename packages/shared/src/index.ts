@@ -4,3 +4,4 @@ export * from "./gantt.js";
 export * from "./migrate.js";
 export * from "./kanban.js";
 export * from "./flowchart.js";
+export * from "./network.js";

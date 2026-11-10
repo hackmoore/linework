@@ -12,6 +12,8 @@ export const TEMPLATE_IDS = [
   "kanban-blank",
   "flowchart-blank",
   "flowchart-approval",
+  "network-blank",
+  "network-investigation",
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -90,6 +92,22 @@ export const TEMPLATE_CATALOG: readonly TemplateInfo[] = [
     name: "Expense approval",
     description: "A process across swimlanes for the employee, manager and finance.",
     category: "Project management",
+    blank: false,
+  },
+  {
+    id: "network-blank",
+    chartType: "network",
+    name: "Blank network map",
+    description: "An empty map, ready for entities and links.",
+    category: "General",
+    blank: true,
+  },
+  {
+    id: "network-investigation",
+    chartType: "network",
+    name: "Investigation map",
+    description: "People, companies, phones, an account and a vehicle, linked with dates and confidence.",
+    category: "General",
     blank: false,
   },
   {

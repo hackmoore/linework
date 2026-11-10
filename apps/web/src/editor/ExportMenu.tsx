@@ -12,6 +12,7 @@ import {
 } from "../export/exporters";
 import { ganttToCsv, ganttToMsProjectXml } from "../gantt/io";
 import { cardsToCsv } from "../kanban/io";
+import { linksToCsv } from "../network/io";
 import { diagramToMermaid } from "../mermaid/mermaid";
 import { shareLink } from "../share/link";
 import { useEditor } from "./store";
@@ -75,10 +76,17 @@ const BASE_ACTIONS: readonly ExportAction[] = [
     id: "csv",
     group: "Download",
     label: "CSV",
-    hint: "Tasks or cards for Excel or Google Sheets",
-    available: (d) => d.chartType === "gantt" || d.chartType === "kanban",
+    hint: "Tasks, cards or links for Excel or Google Sheets",
+    available: (d) => d.chartType === "gantt" || d.chartType === "kanban" || d.chartType === "network",
     run: async (d) => {
-      const csv = d.gantt ? ganttToCsv(d.gantt) : d.kanban ? cardsToCsv(d.kanban) : null;
+      const csv =
+        d.chartType === "network"
+          ? linksToCsv(d)
+          : d.gantt
+            ? ganttToCsv(d.gantt)
+            : d.kanban
+              ? cardsToCsv(d.kanban)
+              : null;
       if (csv) download(csv, "text/csv", `${safeFileName(d.title)}.csv`);
       return Promise.resolve(undefined);
     },

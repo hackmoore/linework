@@ -1,7 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
-import type { Diagram } from "@linework/shared";
+import { ENTITY_TYPES, type Diagram } from "@linework/shared";
 import { ICONS } from "../library/icons";
 import { todayIso } from "../gantt/model";
 import { parseSimpleSpec, SPEC_COLORS } from "../share/simpleSpec";
@@ -18,7 +18,7 @@ import { parseSimpleSpec, SPEC_COLORS } from "../share/simpleSpec";
 export const AI_MODEL = "claude-opus-5-5";
 const KEY_STORAGE = "linework.anthropicApiKey";
 
-export type AiChartKind = "diagram" | "flowchart" | "gantt" | "kanban";
+export type AiChartKind = "diagram" | "flowchart" | "gantt" | "kanban" | "network";
 
 export function loadApiKey(): string {
   try {
@@ -110,6 +110,32 @@ const flowchartOutput = z.object({
   ),
 });
 
+const networkOutput = z.object({
+  title: z.string().describe("Short chart title"),
+  entities: z.array(
+    z.object({
+      id: z.string().describe("Short unique id, letters and digits"),
+      name: z.string().describe("Name shown under the icon"),
+      type: z.enum(ENTITY_TYPES),
+      details: z
+        .array(z.object({ key: z.string(), value: z.string() }))
+        .describe("Facts the user gave about this entity, such as a number or a role; empty if none"),
+    }),
+  ),
+  links: z.array(
+    z.object({
+      from: z.string(),
+      to: z.string(),
+      label: z.string().describe("Relationship, such as calls, owns, director of, met"),
+      strength: z
+        .enum(["confirmed", "unconfirmed", "tentative"])
+        .describe("confirmed only when the user states it as fact"),
+      direction: z.enum(["none", "forward", "both"]).describe("forward when the link goes from -> to"),
+      date: z.string().nullable().describe("YYYY-MM-DD when the user gives a date; null otherwise"),
+    }),
+  ),
+});
+
 const ganttOutput = z.object({
   title: z.string(),
   skipWeekends: z.boolean().describe("true unless the user says work happens at weekends"),
@@ -184,6 +210,15 @@ function systemPrompt(kind: AiChartKind): string {
       "Set WIP limits on in-progress style columns. Use swimlanes only for teams, clients or classes of work the user mentions.",
     ].join("\n");
   }
+  if (kind === "network") {
+    return [
+      ...common,
+      "Produce a network (link analysis) map: the people, organisations, phones, accounts, vehicles, places and other entities the user describes, and the relationships between them.",
+      "Only include entities and links the user's description supports. Never invent personal details such as phone numbers, addresses or dates.",
+      "Mark links the user states as fact as confirmed, reported ones as unconfirmed and guesses as tentative. Layout is automatic.",
+      "Every link must connect existing entity ids.",
+    ].join("\n");
+  }
   if (kind === "flowchart") {
     return [
       ...common,
@@ -246,6 +281,29 @@ function toSpec(kind: AiChartKind, output: unknown): unknown {
       })),
     };
   }
+  if (kind === "network") {
+    const o = output as z.infer<typeof networkOutput>;
+    return {
+      type: "network",
+      title: o.title,
+      entities: o.entities.map((e) => ({
+        id: e.id,
+        name: e.name,
+        type: e.type,
+        details: Object.fromEntries(
+          e.details
+            .filter((d) => d.key.trim() !== "")
+            .slice(0, 40)
+            .map((d) => [d.key.trim().slice(0, 60), d.value.slice(0, 500)]),
+        ),
+      })),
+      links: o.links.map(({ date, ...l }) => ({
+        ...l,
+        label: l.label.slice(0, 200),
+        ...(date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? { date } : {}),
+      })),
+    };
+  }
   if (kind === "flowchart") {
     const o = output as z.infer<typeof flowchartOutput>;
     const lanes = [...new Set(o.lanes.map((l) => l.trim().slice(0, 100)).filter(Boolean))].slice(0, 30);
@@ -288,7 +346,9 @@ export async function generateChart(
         ? kanbanOutput
         : kind === "flowchart"
           ? flowchartOutput
-          : flowOutput;
+          : kind === "network"
+            ? networkOutput
+            : flowOutput;
   try {
     const response = await client.beta.messages.create(
       {

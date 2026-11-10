@@ -20,6 +20,7 @@ import {
 } from "../gantt/model";
 import { createCard, createColumn, createKanbanData } from "../kanban/model";
 import { tidyFlowchart } from "../flowchart/layout";
+import { parseSimpleSpec } from "../share/simpleSpec";
 import { createFlowchartData, createFlowLane, flowNodeStyle } from "../flowchart/model";
 import { TEMPLATE_CATALOG, type TemplateId } from "./catalog";
 
@@ -283,6 +284,9 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
     const title = templateId === "kanban" ? (info?.name ?? "Sprint board") : "Untitled board";
     return { ...createDiagram(title, styleId, "kanban"), kanban };
   }
+  if (templateId === "network-blank" || templateId === "network-investigation") {
+    return networkTemplate(templateId, styleId, info?.name ?? "Network map");
+  }
   if (templateId === "flowchart-blank" || templateId === "flowchart" || templateId === "flowchart-approval") {
     return flowchartTemplate(templateId, styleId, info?.name ?? "Flowchart");
   }
@@ -319,4 +323,53 @@ function flowchartTemplate(
     edges: builder.edges,
     flowchart: { ...createFlowchartData("TB"), lanes },
   });
+}
+
+/** A fictional investigation: every name, number and company here is made up. */
+const INVESTIGATION = {
+  type: "network",
+  entities: [
+    { id: "alex", name: "Alex Mercer", type: "person", details: { Role: "Director" } },
+    { id: "jo", name: "Jo Tanaka", type: "person", details: { Role: "Accountant" } },
+    { id: "sam", name: "Sam Okafor", type: "person" },
+    { id: "northgate", name: "Northgate Trading Ltd", type: "organisation", details: { Country: "UK" } },
+    { id: "bluefin", name: "Bluefin Holdings", type: "organisation", details: { Country: "Cyprus" } },
+    { id: "phone1", name: "07700 900123", type: "phone", details: { Network: "Example Mobile" } },
+    { id: "phone2", name: "07700 900456", type: "phone" },
+    { id: "acct", name: "Account ending 4417", type: "account", details: { Bank: "Example Bank" } },
+    { id: "van", name: "White van AB12 CDE", type: "vehicle", details: { Make: "Example Motors" } },
+    { id: "unit", name: "Unit 7, Harbour Road", type: "location" },
+  ],
+  links: [
+    { from: "alex", to: "northgate", label: "director of", date: "2024-02-01" },
+    { from: "alex", to: "bluefin", label: "shareholder of", strength: "unconfirmed" },
+    { from: "jo", to: "northgate", label: "accountant for" },
+    { from: "alex", to: "phone1", label: "uses" },
+    { from: "sam", to: "phone2", label: "uses", strength: "unconfirmed" },
+    {
+      from: "phone1",
+      to: "phone2",
+      label: "calls ×14",
+      direction: "forward",
+      date: "2025-01-06",
+      endDate: "2025-03-28",
+    },
+    { from: "northgate", to: "acct", label: "holds" },
+    { from: "acct", to: "bluefin", label: "pays", direction: "forward", date: "2025-02-14" },
+    { from: "van", to: "northgate", label: "registered to" },
+    { from: "sam", to: "van", label: "seen driving", strength: "tentative", date: "2025-03-02" },
+    { from: "van", to: "unit", label: "parked at", strength: "unconfirmed" },
+    { from: "northgate", to: "unit", label: "leases" },
+  ],
+} as const;
+
+function networkTemplate(
+  templateId: "network-blank" | "network-investigation",
+  styleId: StyleId,
+  name: string,
+): Diagram {
+  if (templateId === "network-blank") return createDiagram("Untitled network", styleId, "network");
+  const built = parseSimpleSpec({ ...INVESTIGATION, title: name, style: styleId });
+  if (!built.ok) throw new Error(built.error);
+  return built.diagram;
 }

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { flowchartDataSchema, validateFlowchart } from "./flowchart.js";
 import { ganttDataSchema, validateGantt } from "./gantt.js";
 import { kanbanDataSchema, validateKanban } from "./kanban.js";
+import { networkDataSchema, validateNetwork } from "./network.js";
 import { migrateDiagram } from "./migrate.js";
 
 /** Current on-disk document format version; bump with a migration when the shape changes. */
@@ -9,11 +10,12 @@ export const DIAGRAM_FORMAT_VERSION = 2;
 
 /**
  * What a document is. Each chart type has its own objects and editor:
- * freeform diagrams and flowcharts use nodes and edges (flowcharts add direction and
- * swimlanes in `flowchart`); gantt charts and kanban boards use the `gantt` and `kanban`
+ * freeform diagrams, flowcharts and network maps use nodes and edges (flowcharts add
+ * direction and swimlanes in `flowchart`, network maps add entity and link details in
+ * `network`); gantt charts and kanban boards use the `gantt` and `kanban`
  * payloads.
  */
-export const CHART_TYPES = ["freeform", "gantt", "kanban", "flowchart"] as const;
+export const CHART_TYPES = ["freeform", "gantt", "kanban", "flowchart", "network"] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
 
 export const SHAPE_KINDS = [
@@ -139,6 +141,7 @@ export const diagramSchema = z
     gantt: ganttDataSchema.optional(),
     kanban: kanbanDataSchema.optional(),
     flowchart: flowchartDataSchema.optional(),
+    network: networkDataSchema.optional(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
   })
@@ -185,6 +188,15 @@ export const diagramSchema = z
       }
       for (const [path, message] of validateFlowchart(diagram.flowchart)) {
         ctx.addIssue({ code: "custom", path: ["flowchart", ...path], message });
+      }
+    }
+    if (diagram.chartType === "network") {
+      if (!diagram.network) {
+        ctx.addIssue({ code: "custom", path: ["network"], message: "Network map is missing its data" });
+        return;
+      }
+      for (const [path, message] of validateNetwork(diagram.network)) {
+        ctx.addIssue({ code: "custom", path: ["network", ...path], message });
       }
     }
   });

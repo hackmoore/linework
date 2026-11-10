@@ -100,6 +100,41 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["step", "steps"],
   },
+  network: {
+    id: "network",
+    name: "Network map",
+    tagline: "Map people, organisations and the links between them, then find who connects to whom.",
+    bestFor: [
+      "Investigations and due diligence",
+      "Stakeholder and influence maps",
+      "Fraud, ownership and contact networks",
+    ],
+    objects: [
+      {
+        name: "Entity",
+        description:
+          "A person, organisation, phone, account, vehicle, place or other thing, with its own details.",
+      },
+      {
+        name: "Link",
+        description:
+          "A relationship between two entities, such as calls, owns or director of, with optional dates.",
+      },
+      {
+        name: "How sure",
+        description: "Solid lines are confirmed, dashed are unconfirmed and dotted are tentative.",
+      },
+    ],
+    tips: [
+      "Add entities from the toolbar on the left, then drag the dot on an entity's edge onto another to link them.",
+      "Double-click a link to type what it is, such as 'calls' or 'shareholder of'.",
+      "Select two entities to see the shortest path between them.",
+      "Key entities lists who has the most links and who sits between groups.",
+      "Found the same person twice? Select both and choose Merge duplicates.",
+      "Import a CSV of links (from, to, type, date) from My diagrams to build a map from records.",
+    ],
+    item: ["entity", "entities"],
+  },
   freeform: {
     id: "freeform",
     name: "Freeform diagram",
@@ -122,7 +157,7 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
 };
 
 /** Order shown in the chart type picker. */
-export const CHART_TYPE_ORDER: readonly ChartType[] = ["gantt", "kanban", "flowchart", "freeform"];
+export const CHART_TYPE_ORDER: readonly ChartType[] = ["gantt", "kanban", "flowchart", "network", "freeform"];
 
 /** "1 task", "3 cards", "0 shapes". */
 export function countLabel(chartType: ChartType, count: number): string {

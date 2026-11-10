@@ -11,7 +11,10 @@ import {
   type GanttTask,
   type KanbanCard,
   type KanbanColumn,
+  type NetworkEntity,
+  type NetworkLink,
   type ShapeKind,
+  ENTITY_TYPES,
 } from "@linework/shared";
 import { createDiagram, createEdge, createNode } from "../diagram/factory";
 import { layeredLayout, withPositions } from "../editor/arrange";
@@ -19,6 +22,8 @@ import { addDays, createGanttData, createSection, createTask, finishToStart, tod
 import { autoSchedule, calendarOf, placeAt } from "../gantt/schedule";
 import { createCard, createColumn, createLane } from "../kanban/model";
 import { tidyFlowchart } from "../flowchart/layout";
+import { layoutNetwork } from "../network/layout";
+import { createEntityNode } from "../network/model";
 import { createFlowchartData, createFlowLane, DEFAULT_LANE_SIZE, flowNodeStyle } from "../flowchart/model";
 import { ICONS } from "../library/icons";
 import { boundsOf } from "../render/geometry";
@@ -162,7 +167,40 @@ const kanbanSchema = z.object({
     .max(50),
 });
 
-const specSchema = z.discriminatedUnion("type", [flowSchema, ganttSchema, kanbanSchema]);
+const networkSchema = z.object({
+  type: z.literal("network"),
+  title: text(200).optional(),
+  style: z.enum(["professional", "sketch"]).optional(),
+  entities: z
+    .array(
+      z.object({
+        id: text(64).min(1),
+        name: text(200).optional(),
+        type: z.enum(ENTITY_TYPES).optional(),
+        /** Details as { "Phone number": "07700 900123" }. */
+        details: z.record(text(60).min(1), text(500)).optional(),
+        notes: text(5_000).optional(),
+      }),
+    )
+    .min(1)
+    .max(2_000),
+  links: z
+    .array(
+      z.object({
+        from: text(64),
+        to: text(64),
+        label: text(200).optional(),
+        strength: z.enum(["confirmed", "unconfirmed", "tentative"]).optional(),
+        direction: z.enum(["none", "forward", "both"]).optional(),
+        date: date.optional(),
+        endDate: date.optional(),
+      }),
+    )
+    .max(5_000)
+    .optional(),
+});
+
+const specSchema = z.discriminatedUnion("type", [flowSchema, ganttSchema, kanbanSchema, networkSchema]);
 export type SimpleSpec = z.input<typeof specSchema>;
 
 export type SpecResult = { ok: true; diagram: Diagram } | { ok: false; error: string };
@@ -179,6 +217,7 @@ export function parseSimpleSpec(input: unknown): SpecResult {
   const spec = parsed.data;
   if (spec.type === "gantt") return { ok: true, diagram: buildGantt(spec) };
   if (spec.type === "kanban") return buildKanban(spec);
+  if (spec.type === "network") return buildNetwork(spec);
   return buildFlow(spec);
 }
 
@@ -295,6 +334,49 @@ function buildFlowchart(
     flowchart: { ...createFlowchartData(direction), lanes },
   });
   return { ok: true, diagram: withGroups(diagram, spec, ids) };
+}
+
+const STRENGTH_PATTERN = { confirmed: "solid", unconfirmed: "dashed", tentative: "dotted" } as const;
+
+/** A network map: entities with details, links with strength and dates, laid out organically. */
+function buildNetwork(spec: z.infer<typeof networkSchema>): SpecResult {
+  const base = createDiagram(spec.title ?? "Untitled network", spec.style ?? "professional", "network");
+  const layerId = base.layers[0]?.id ?? "layer-1";
+  const ids = new Map<string, string>();
+  const nodes: DiagramNode[] = [];
+  const entities: NetworkEntity[] = [];
+  for (const e of spec.entities) {
+    if (ids.has(e.id)) return { ok: false, error: `Duplicate entity id "${e.id}"` };
+    const type = e.type ?? "other";
+    const node = createEntityNode(type, e.name ?? e.id, 0, 0, layerId);
+    ids.set(e.id, node.id);
+    nodes.push(node);
+    const attributes = Object.entries(e.details ?? {})
+      .slice(0, 40)
+      .map(([key, value]) => ({ key, value }));
+    entities.push({ id: node.id, type, attributes, notes: e.notes ?? "" });
+  }
+  const edges: DiagramEdge[] = [];
+  const links: NetworkLink[] = [];
+  for (const l of spec.links ?? []) {
+    const source = ids.get(l.from);
+    const target = ids.get(l.to);
+    if (!source || !target)
+      return { ok: false, error: `Link ${l.from} -> ${l.to} refers to an unknown entity id` };
+    const direction = l.direction ?? "none";
+    const edge = createEdge(source, target, {
+      label: l.label ?? "",
+      strokePattern: STRENGTH_PATTERN[l.strength ?? "confirmed"],
+      arrowEnd: direction === "none" ? "none" : "arrow",
+      arrowStart: direction === "both" ? "arrow" : "none",
+    });
+    edges.push(edge);
+    const start = l.date ?? null;
+    const end = l.endDate && (!start || l.endDate >= start) ? l.endDate : null;
+    if (start || end) links.push({ id: edge.id, date: start, endDate: end });
+  }
+  const diagram = layoutNetwork({ ...base, nodes, edges, network: { entities, links } }, "organic");
+  return { ok: true, diagram };
 }
 
 function buildGantt(spec: z.infer<typeof ganttSchema>): Diagram {

@@ -1,5 +1,8 @@
 import type { ReactElement, ReactNode } from "react";
-import type { ChartType } from "@linework/shared";
+import { ENTITY_TYPES, type ChartType } from "@linework/shared";
+import { getIcon } from "../library/icons";
+import { networkActions } from "../network/actions";
+import { ENTITY_INFO } from "../network/model";
 import { useEditor, type Tool } from "./store";
 import { useUi } from "./ui";
 
@@ -82,11 +85,61 @@ export const FLOW_TOOLS: readonly ToolDef[] = [
   ...[byTool("cylinder"), byTool("note"), byTool("text")].filter((t): t is ToolDef => t !== undefined),
 ];
 
+/** Network maps add entities from their own buttons; the tools are just these. */
+export const NETWORK_TOOLS: readonly ToolDef[] = [SELECT, CONNECT, byTool("note"), byTool("text")].filter(
+  (t): t is ToolDef => t !== undefined,
+);
+
 export function toolsFor(chartType: ChartType | undefined): readonly ToolDef[] {
-  return chartType === "flowchart" ? FLOW_TOOLS : TOOLS;
+  return chartType === "flowchart" ? FLOW_TOOLS : chartType === "network" ? NETWORK_TOOLS : TOOLS;
 }
 
-export function ToolPalette(): ReactElement {
+function EntityButtons({ canvasCentre }: { canvasCentre: () => { x: number; y: number } }): ReactElement {
+  return (
+    <>
+      <span className="tool-palette__divider" aria-hidden="true" />
+      {ENTITY_TYPES.map((type) => {
+        const info = ENTITY_INFO[type];
+        const icon = getIcon(info.icon);
+        return (
+          <button
+            key={type}
+            type="button"
+            className="tool-button"
+            aria-label={`Add ${info.label.toLowerCase()}`}
+            title={`Add ${info.label.toLowerCase()}`}
+            onClick={() => {
+              networkActions.addEntity(type, canvasCentre());
+            }}
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke={info.color}
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              {icon?.paths.map((d, i) => (
+                <path key={i} d={d} />
+              ))}
+            </svg>
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
+export function ToolPalette({
+  canvasCentre,
+}: {
+  /** Diagram point at the middle of the visible canvas, where new entities go. */
+  canvasCentre: () => { x: number; y: number };
+}): ReactElement {
   const tool = useEditor((s) => s.tool);
   const chartType = useEditor((s) => s.diagram?.chartType);
   const setTool = useEditor((s) => s.setTool);
@@ -145,6 +198,7 @@ export function ToolPalette(): ReactElement {
           </svg>
         </button>
       ))}
+      {chartType === "network" && <EntityButtons canvasCentre={canvasCentre} />}
     </div>
   );
 }

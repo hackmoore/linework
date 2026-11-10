@@ -4,17 +4,23 @@ import { importGanttFile } from "../gantt/io";
 import { importCards, isKanbanCsv } from "../kanban/io";
 import { createKanbanData } from "../kanban/model";
 import { parseMermaid } from "../mermaid/mermaid";
+import { importLinksCsv, isNetworkCsv } from "../network/io";
 import { parseSimpleSpec } from "./simpleSpec";
 
 export type TextImportResult = { ok: true; diagram: Diagram } | { ok: false; error: string };
 
 /**
  * Turns pasted or uploaded text into a diagram: a Linework file, simple JSON spec, Mermaid,
- * or (by file name) a CSV / MS Project XML task list or a CSV of kanban cards.
+ * or (by file name) a CSV / MS Project XML task list, a CSV of kanban cards or a CSV of
+ * links between entities.
  */
 export function importText(text: string, fileName = ""): TextImportResult {
   const trimmed = text.trim();
   if (!trimmed) return { ok: false, error: "Nothing to import" };
+  if (/\.csv$/i.test(fileName) && isNetworkCsv(text)) {
+    const result = importLinksCsv(text, fileName.replace(/\.[^.]+$/, "") || "Imported network");
+    return result.ok ? { ok: true, diagram: result.diagram } : result;
+  }
   if (/\.csv$/i.test(fileName) && isKanbanCsv(text)) {
     const result = importCards({ ...createKanbanData(), columns: [] }, text);
     if (!result.ok) return result;

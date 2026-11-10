@@ -149,7 +149,13 @@ export function EditorPage(): ReactElement {
         </div>
       ) : (
         <div className="editor__body">
-          <ToolPalette />
+          <ToolPalette
+            canvasCentre={() => {
+              const { width, height } = getCanvasSize();
+              const vp = useEditor.getState().viewport;
+              return { x: vp.x + width / 2 / vp.zoom, y: vp.y + height / 2 / vp.zoom };
+            }}
+          />
           {libraryOpen && (
             <LibraryPanel
               onClose={() => {

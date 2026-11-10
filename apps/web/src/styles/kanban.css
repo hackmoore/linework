@@ -352,3 +352,97 @@ button.flow-issues__item {
 button.flow-issues__item:hover {
   border-color: #d97706;
 }
+
+/* Network map inspector. */
+.network-attrs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0 0 0.35rem;
+  padding: 0;
+  list-style: none;
+}
+.network-attrs__row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.network-attrs__key {
+  flex: 0 0 38%;
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.network-attrs__new-key {
+  flex: 0 0 38%;
+  min-width: 0;
+}
+.network-attrs__value {
+  flex: 1;
+  min-width: 0;
+}
+.network-links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+.network-links__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+.network-links__item:hover {
+  background: var(--color-surface-2);
+}
+.network-links__dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.network-links__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.network-links__type {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+.network-dates {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+.network-dates .input {
+  flex: 1;
+  min-width: 0;
+}
+.network-search {
+  display: flex;
+  gap: 0.35rem;
+}
+.network-search .input {
+  flex: 1;
+  min-width: 0;
+}

@@ -134,6 +134,7 @@ export function createDiagram(
     ...(chartType === "flowchart"
       ? { flowchart: { direction: "TB" as const, laneStart: 0, lanes: [] } }
       : {}),
+    ...(chartType === "network" ? { network: { entities: [], links: [] } } : {}),
     createdAt: now,
     updatedAt: now,
   };

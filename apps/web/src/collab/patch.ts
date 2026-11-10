@@ -4,6 +4,7 @@ import {
   type GanttData,
   type GanttDependency,
   type FlowchartData,
+  type NetworkData,
   type KanbanData,
 } from "@linework/shared";
 
@@ -48,7 +49,9 @@ type CollectionName =
   | "kanban.columns"
   | "kanban.lanes"
   | "kanban.cards"
-  | "flowchart.lanes";
+  | "flowchart.lanes"
+  | "network.entities"
+  | "network.links";
 const COLLECTIONS: readonly CollectionName[] = [
   "nodes",
   "edges",
@@ -60,6 +63,8 @@ const COLLECTIONS: readonly CollectionName[] = [
   "kanban.lanes",
   "kanban.cards",
   "flowchart.lanes",
+  "network.entities",
+  "network.links",
 ];
 const FLOWCHART_SCALARS = ["direction", "laneStart"] as const;
 
@@ -77,6 +82,10 @@ function getCollection(d: Diagram, name: CollectionName): readonly Item[] {
       return d.kanban?.cards ?? [];
     case "flowchart.lanes":
       return d.flowchart?.lanes ?? [];
+    case "network.entities":
+      return d.network?.entities ?? [];
+    case "network.links":
+      return d.network?.links ?? [];
     default:
       return d[name];
   }
@@ -195,6 +204,16 @@ export function applyPatch(doc: Diagram, patch: DiagramPatch): Diagram {
       if (`flowchart.${key}` in s) flowchart = { ...flowchart, [key]: s[`flowchart.${key}`] };
     next = { ...next, flowchart };
   }
+  if (doc.network || COLLECTIONS.some((c) => c.startsWith("network.") && c in patch.collections)) {
+    const base: NetworkData = doc.network ?? { entities: [], links: [] };
+    next = {
+      ...next,
+      network: {
+        entities: applyCollection(base.entities, patch.collections["network.entities"]),
+        links: applyCollection(base.links, patch.collections["network.links"]),
+      },
+    };
+  }
   return repair(next);
 }
 
@@ -253,7 +272,21 @@ export function repair(d: Diagram): Diagram {
     });
     kanban = { ...kanban, cards };
   }
-  return { ...d, layers, nodes, edges, ...(gantt ? { gantt } : {}), ...(kanban ? { kanban } : {}) };
+  // Details of entities or links deleted concurrently go with them.
+  const edgeIds = new Set(edges.map((e) => e.id));
+  const network = d.network && {
+    entities: d.network.entities.filter((e) => nodeIds.has(e.id)),
+    links: d.network.links.filter((l) => edgeIds.has(l.id)),
+  };
+  return {
+    ...d,
+    layers,
+    nodes,
+    edges,
+    ...(gantt ? { gantt } : {}),
+    ...(kanban ? { kanban } : {}),
+    ...(network ? { network } : {}),
+  };
 }
 
 /** Validates an incoming full document. */

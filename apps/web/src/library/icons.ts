@@ -390,6 +390,29 @@ export const ICONS: readonly IconDef[] = [
     ],
   },
   {
+    id: "phone",
+    name: "Phone",
+    category: "People & business",
+    keywords: "telephone call number handset",
+    paths: [
+      "M6.5 3.5l3 .5 1.5 4-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4 1.5.5 3c0 1-1 2-2 2C11 19.5 4.5 13 4.5 5.5c0-1 1-2 2-2z",
+    ],
+  },
+  {
+    id: "car",
+    name: "Vehicle",
+    category: "People & business",
+    keywords: "car vehicle van truck transport",
+    paths: ["M3 16v-4l2-5h14l2 5v4z", "M3 12h18", circle(7, 17.5, 1.8), circle(17, 17.5, 1.8)],
+  },
+  {
+    id: "pin",
+    name: "Location",
+    category: "People & business",
+    keywords: "place address map marker where",
+    paths: ["M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z", circle(12, 9.5, 2.5)],
+  },
+  {
     id: "building",
     name: "Company",
     category: "People & business",
