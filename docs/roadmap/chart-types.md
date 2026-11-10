@@ -4,7 +4,7 @@ Each chart type is a structured document with its own objects, editor and guidan
 (see `apps/web/src/charts/chartTypes.ts`). Freeform diagrams remain available for
 anything that does not fit a type.
 
-Status: **Gantt**, **Roadmap**, **Kanban**, **Flowchart**, **Network map**, **Architecture (C4)** and **Freeform** are implemented. The rest are candidates, ranked by
+Status: **Gantt**, **Roadmap**, **Kanban**, **Flowchart**, **Network map**, **Architecture (C4)**, **Entity-relationship** and **Freeform** are implemented. The rest are candidates, ranked by
 fit with Linework's focus on project management and software design.
 
 | Priority | Chart                        | Objects                                               | Why                                                   |
@@ -17,7 +17,7 @@ fit with Linework's focus on project management and software design.
 | Done     | Roadmap / timeline           | Lanes, items, quarters, milestones                    | Shipped                                               |
 | 4        | Sequence diagram             | Lifelines, messages, activations, notes               | Core software design; awkward to draw freehand        |
 | Done     | Architecture / C4            | People, systems, containers, components, boundaries   | Shipped; exports Mermaid C4                           |
-| 6        | Entity-relationship          | Tables, columns, keys, crow's-foot relations          | Every backend team draws these                        |
+| Done     | Entity-relationship          | Tables, columns, keys, crow's-foot relations          | Shipped; imports and exports SQL                      |
 | 7        | Org / team chart             | People, roles, reporting lines, automatic tree layout | Template already exists                               |
 | 8        | Mind map                     | Central topic, branches, automatic layout             | Fast brainstorming                                    |
 | 9        | Class diagram (UML)          | Classes, members, inheritance, composition            | Engineering audience                                  |
