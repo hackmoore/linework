@@ -10,6 +10,8 @@ export const TEMPLATE_IDS = [
   "gantt-blank",
   "gantt-launch",
   "kanban-blank",
+  "flowchart-blank",
+  "flowchart-approval",
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -67,11 +69,27 @@ export const TEMPLATE_CATALOG: readonly TemplateInfo[] = [
     blank: false,
   },
   {
-    id: "flowchart",
-    chartType: "freeform",
-    name: "Flowchart",
-    description: "Processes, decisions and outcomes.",
+    id: "flowchart-blank",
+    chartType: "flowchart",
+    name: "Blank flowchart",
+    description: "An empty flowchart, read top to bottom.",
     category: "Software design",
+    blank: true,
+  },
+  {
+    id: "flowchart",
+    chartType: "flowchart",
+    name: "Request handling",
+    description: "Start, steps, a yes/no decision and an end.",
+    category: "Software design",
+    blank: false,
+  },
+  {
+    id: "flowchart-approval",
+    chartType: "flowchart",
+    name: "Expense approval",
+    description: "A process across swimlanes for the employee, manager and finance.",
+    category: "Project management",
     blank: false,
   },
   {

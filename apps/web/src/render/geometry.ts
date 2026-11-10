@@ -109,8 +109,16 @@ export function shapePath(kind: ShapeKind, box: Box, cornerRadius: number): stri
     case "rectangle":
     case "container":
       return `M${r2(x)} ${r2(y)}H${r2(x + w)}V${r2(y + h)}H${r2(x)}Z`;
+    case "subroutine": {
+      const inset = Math.min(12, w / 8);
+      return (
+        `M${r2(x)} ${r2(y)}H${r2(x + w)}V${r2(y + h)}H${r2(x)}Z` +
+        `M${r2(x + inset)} ${r2(y)}V${r2(y + h)}M${r2(x + w - inset)} ${r2(y)}V${r2(y + h)}`
+      );
+    }
+    case "terminal":
     case "rounded": {
-      const r = Math.min(cornerRadius, w / 2, h / 2);
+      const r = kind === "terminal" ? Math.min(w, h) / 2 : Math.min(cornerRadius, w / 2, h / 2);
       return (
         `M${r2(x + r)} ${r2(y)}H${r2(x + w - r)}A${r2(r)} ${r2(r)} 0 0 1 ${r2(x + w)} ${r2(y + r)}` +
         `V${r2(y + h - r)}A${r2(r)} ${r2(r)} 0 0 1 ${r2(x + w - r)} ${r2(y + h)}` +
@@ -173,14 +181,65 @@ export function boundaryPoint(node: DiagramNode, toward: Point): Point {
   return { x: c.x + dx * t, y: c.y + dy * t };
 }
 
-/** Polyline points for an edge between two nodes. */
+/** Space between a looping connector and the shapes it goes around. */
+const LOOP_GAP = 28;
+
+/**
+ * Elbow route for a flowchart link that goes back against the flow (a loop to an earlier
+ * step). It runs back in a channel on the source's side of both shapes and enters the
+ * target's side a little after its centre, so it stays clear of forward links that use the
+ * centres.
+ */
+function loopPoints(source: DiagramNode, target: DiagramNode, flow: "TB" | "LR"): Point[] {
+  const sc = center(source);
+  const tc = center(target);
+  if (flow === "TB") {
+    const right = sc.x >= tc.x;
+    const channel = right
+      ? Math.max(source.x + source.width, target.x + target.width) + LOOP_GAP
+      : Math.min(source.x, target.x) - LOOP_GAP;
+    const sx = right ? source.x + source.width : source.x;
+    const tx = right ? target.x + target.width : target.x;
+    const ty = tc.y + target.height / 4;
+    return dedupe([
+      { x: sx, y: sc.y },
+      { x: channel, y: sc.y },
+      { x: channel, y: ty },
+      { x: tx, y: ty },
+    ]);
+  }
+  const below = sc.y >= tc.y;
+  const channel = below
+    ? Math.max(source.y + source.height, target.y + target.height) + LOOP_GAP
+    : Math.min(source.y, target.y) - LOOP_GAP;
+  const sy = below ? source.y + source.height : source.y;
+  const ty = below ? target.y + target.height : target.y;
+  const tx = tc.x + target.width / 4;
+  return dedupe([
+    { x: sc.x, y: sy },
+    { x: sc.x, y: channel },
+    { x: tx, y: channel },
+    { x: tx, y: ty },
+  ]);
+}
+
+/**
+ * Polyline points for an edge between two nodes. `flow` is a flowchart's direction: elbow
+ * links that go back against it are routed around the side as loops.
+ */
 export function edgePoints(
   edge: Pick<DiagramEdge, "routing">,
   source: DiagramNode,
   target: DiagramNode,
+  flow?: "TB" | "LR",
 ): Point[] {
   const sc = center(source);
   const tc = center(target);
+  if (edge.routing === "elbow" && flow) {
+    const backwards =
+      flow === "TB" ? target.y + target.height <= source.y : target.x + target.width <= source.x;
+    if (backwards) return loopPoints(source, target, flow);
+  }
   if (edge.routing === "elbow") {
     const dx = tc.x - sc.x;
     const dy = tc.y - sc.y;

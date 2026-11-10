@@ -23,6 +23,8 @@ import {
 import { selectedSnippet } from "./clipboard";
 import { addLayer, deleteLayer, moveLayer, moveSelectionToLayer, updateLayer } from "./layers";
 import { applyTheme, THEMES } from "./themes";
+import { flowActions } from "../flowchart/actions";
+import { FlowchartSettings, FlowStepSection } from "../flowchart/FlowchartPanel";
 import { editableLayerIds, useEditor } from "./store";
 
 const SWATCHES = ["#1f2937", "#1a56db", "#1e7e34", "#b45309", "#b91c1c", "#6d28d9", "#ffffff"];
@@ -409,6 +411,11 @@ export function autoLayout(direction: LayoutDirection, ids?: readonly string[]):
   const state = useEditor.getState();
   const diagram = state.diagram;
   if (!diagram) return;
+  if (diagram.chartType === "flowchart") {
+    // Flowcharts lay out along their own direction, keeping steps in their lanes.
+    flowActions.tidy(ids);
+    return;
+  }
   const editable = editableLayerIds(diagram);
   const wanted = ids ? new Set(ids) : null;
   const nodes = diagram.nodes.filter(
@@ -634,12 +641,15 @@ export function Inspector(): ReactElement | null {
   const nodes = diagram.nodes.filter((n) => selection.nodeIds.includes(n.id));
   const edges = diagram.edges.filter((e) => selection.edgeIds.includes(e.id));
   const { setStyle, setBackground } = useEditor.getState();
+  const flowchart = diagram.chartType === "flowchart";
   return (
     <div className="inspector__content" aria-label="Properties">
+      {flowchart && nodes.length > 0 && <FlowStepSection diagram={diagram} nodes={nodes} />}
       {nodes.length > 0 && <NodeInspector nodes={nodes} />}
       {edges.length > 0 && <EdgeInspector edges={edges} />}
+      {flowchart && nodes.length === 0 && edges.length === 0 && <FlowchartSettings diagram={diagram} />}
       {nodes.length === 0 && edges.length === 0 && (
-        <Section title="Diagram">
+        <Section title={flowchart ? "Appearance" : "Diagram"}>
           <div className="inspector__field">
             <span className="inspector__label">Style</span>
             <div className="style-options" role="radiogroup" aria-label="Diagram style">
@@ -692,29 +702,31 @@ export function Inspector(): ReactElement | null {
               ))}
             </div>
           </div>
-          <div className="inspector__field">
-            <span className="inspector__label">Automatic layout</span>
-            <div className="inspector__actions">
-              <button
-                type="button"
-                className="btn btn--sm"
-                onClick={() => {
-                  autoLayout("TB");
-                }}
-              >
-                Top to bottom
-              </button>
-              <button
-                type="button"
-                className="btn btn--sm"
-                onClick={() => {
-                  autoLayout("LR");
-                }}
-              >
-                Left to right
-              </button>
+          {!flowchart && (
+            <div className="inspector__field">
+              <span className="inspector__label">Automatic layout</span>
+              <div className="inspector__actions">
+                <button
+                  type="button"
+                  className="btn btn--sm"
+                  onClick={() => {
+                    autoLayout("TB");
+                  }}
+                >
+                  Top to bottom
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--sm"
+                  onClick={() => {
+                    autoLayout("LR");
+                  }}
+                >
+                  Left to right
+                </button>
+              </div>
             </div>
-          </div>
+          )}
           <p className="inspector__hint">
             Select a shape or connector to edit it. Double-click the canvas to add text.
           </p>

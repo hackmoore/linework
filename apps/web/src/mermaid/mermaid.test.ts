@@ -22,7 +22,9 @@ describe("Mermaid flowchart import", () => {
       A & D --- F
       style A fill:#f9f`);
     const byLabel = new Map(diagram.nodes.map((n) => [n.label, n]));
-    expect(byLabel.get("Start")?.kind).toBe("rounded");
+    expect(diagram.chartType).toBe("flowchart");
+    expect(diagram.flowchart?.direction).toBe("LR");
+    expect(byLabel.get("Start")?.kind).toBe("terminal");
     expect(byLabel.get("Valid?")?.kind).toBe("diamond");
     expect(byLabel.get("Database")?.kind).toBe("cylinder");
     expect(byLabel.get("Error")?.kind).toBe("parallelogram");

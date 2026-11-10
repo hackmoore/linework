@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { copySelection, cutSelection, paste } from "./clipboard";
 import { useEditor } from "./store";
 import { useUi } from "./ui";
-import { TOOLS } from "./ToolPalette";
+import { toolsFor } from "./ToolPalette";
+import { flowActions } from "../flowchart/actions";
 import { fitToContent, zoomBy } from "./viewport";
 
 function isTyping(target: EventTarget | null): boolean {
@@ -23,7 +24,7 @@ export function useShortcuts(getCanvasSize: () => { width: number; height: numbe
 
       // Gantt charts and kanban boards only share undo/redo, select all and delete; the rest
       // is canvas-specific.
-      if (state.diagram && state.diagram.chartType !== "freeform") {
+      if (state.diagram?.chartType === "gantt" || state.diagram?.chartType === "kanban") {
         if (mod && key === "z" && !event.shiftKey) state.undo();
         else if (mod && ((key === "z" && event.shiftKey) || key === "y")) state.redo();
         else if (mod && key === "a") state.selectAll();
@@ -59,6 +60,11 @@ export function useShortcuts(getCanvasSize: () => { width: number; height: numbe
       } else if (key === "escape") {
         state.clearSelection();
         state.setTool("select");
+      } else if (key === "tab" && state.diagram?.chartType === "flowchart" && !event.shiftKey) {
+        // Tab adds the next step after the selected one, like an outliner.
+        const only = state.selection.nodeIds.length === 1 ? state.selection.nodeIds[0] : undefined;
+        if (only) flowActions.addNextStep(only, "rectangle");
+        else return;
       } else if (key === "enter") {
         const only = state.selection.nodeIds.length === 1 ? state.selection.nodeIds[0] : undefined;
         if (only) state.startEditing({ nodeId: only });
@@ -75,7 +81,7 @@ export function useShortcuts(getCanvasSize: () => { width: number; height: numbe
       } else if (key === "p") {
         useUi.getState().setPresenting(true);
       } else {
-        const def = TOOLS.find((t) => t.shortcut.toLowerCase() === key);
+        const def = toolsFor(state.diagram?.chartType).find((t) => t.shortcut.toLowerCase() === key);
         if (!def) return;
         state.setTool(def.tool);
       }

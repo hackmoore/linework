@@ -1,4 +1,4 @@
-import { boundsOf } from "../render/geometry";
+import { contentBounds } from "../flowchart/model";
 import { MAX_ZOOM, useEditor } from "./store";
 
 interface Size {
@@ -12,7 +12,7 @@ const FIT_PADDING = 60;
 export function fitToContent(canvas: Size): void {
   const { diagram, setViewport } = useEditor.getState();
   if (!diagram || canvas.width === 0 || canvas.height === 0) return;
-  const bounds = boundsOf(diagram.nodes);
+  const bounds = contentBounds(diagram);
   if (!bounds) {
     setViewport({ x: -canvas.width / 2, y: -canvas.height / 3, zoom: 1 });
     return;

@@ -15,7 +15,7 @@ export function llmsGuide({ origin, iconIds }: GuideOptions): string {
   const base = origin || "https://<this site>";
   return `# Linework: instructions for AI assistants
 
-> Linework is a free, open source editor for diagrams, Gantt charts and kanban boards. It runs in the browser
+> Linework is a free, open source editor for flowcharts, diagrams, Gantt charts and kanban boards. It runs in the browser
 > with no sign-in. You can create a chart for a user by giving them a link. When they open
 > it, the chart appears in the editor, where they can edit it, save it locally and export
 > PNG, SVG, PDF, CSV, MS Project XML or Mermaid.
@@ -31,7 +31,7 @@ for assistants:
 
 - \`m=\` Mermaid text (flowchart/graph, gantt or kanban), URL-encoded.
 - \`s=\` Linework simple JSON (below), URL-encoded. Use this for icons, colours, groups,
-  owners, progress, swimlanes, WIP limits and due dates, which Mermaid can't express.
+  owners, progress, WIP limits and due dates, which Mermaid can't express.
 
 URL-encode the payload with encodeURIComponent rules: spaces become %20, newlines %0A,
 \`#\` %23, \`&\` %26, quotes %22, \`{\` %7B, \`}\` %7D. Base64url-encoded payloads also work.
@@ -40,10 +40,12 @@ For a read-only view (for example to embed in an iframe), use \`/embed#\` instea
 
 ## Option 1: Mermaid
 
-Supported: \`flowchart\` / \`graph\` (TD, TB, LR, RL, BT), node shapes \`[ ]\`, \`( )\`,
-\`([ ])\`, \`[( )]\` database, \`(( ))\` circle, \`{ }\` decision, \`{{ }}\` hexagon, \`[/ /]\`,
-links \`-->\`, \`---\`, \`-.->\`, \`==>\`, labels \`-->|text|\` or \`-- text -->\`, \`A & B --> C\`,
-and \`subgraph id [Title] ... end\`. Styling lines are ignored.
+Supported: \`flowchart\` / \`graph\` (TD, TB, LR, RL, BT), node shapes \`[ ]\` step, \`( )\`,
+\`([ ])\` start/end, \`[[ ]]\` subprocess, \`[( )]\` database, \`(( ))\` circle, \`{ }\` decision,
+\`{{ }}\` hexagon, \`[/ /]\` input/output, links \`-->\`, \`---\`, \`-.->\`, \`==>\`, labels
+\`-->|text|\` or \`-- text -->\`, \`A & B --> C\`, and \`subgraph id [Title] ... end\`. Styling
+lines are ignored. Mermaid flowcharts open as Linework flowcharts. When every node is in
+exactly one top-level subgraph, the subgraphs become swimlanes.
 
 Gantt: \`title\`, \`dateFormat YYYY-MM-DD\` (only this format), \`excludes weekends\`,
 \`section\`, and tasks like \`Name :done, id1, 2026-03-02, 5d\`, \`Name :id2, after id1, 3d\`,
@@ -65,10 +67,44 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
 
 ## Option 2: Linework simple JSON
 
-### Diagram (flowchart, architecture, org chart, process)
+### Flowchart (process, workflow, algorithm, approval)
 
     {
       "type": "flowchart",
+      "title": "Expense approval",
+      "direction": "TB",
+      "lanes": ["Employee", "Manager", "Finance"],
+      "nodes": [
+        { "id": "start", "label": "Start", "shape": "start", "lane": "Employee" },
+        { "id": "submit", "label": "Submit claim", "shape": "io", "lane": "Employee" },
+        { "id": "ok", "label": "Approved?", "shape": "decision", "lane": "Manager" },
+        { "id": "fix", "label": "Fix and resubmit", "lane": "Employee" },
+        { "id": "pay", "label": "Pay expenses", "shape": "subprocess", "lane": "Finance" },
+        { "id": "end", "label": "Done", "shape": "end", "lane": "Finance" }
+      ],
+      "edges": [
+        { "from": "start", "to": "submit" },
+        { "from": "submit", "to": "ok" },
+        { "from": "ok", "to": "pay", "label": "Yes" },
+        { "from": "ok", "to": "fix", "label": "No" },
+        { "from": "fix", "to": "ok" },
+        { "from": "pay", "to": "end" }
+      ]
+    }
+
+- \`shape\`: start, end, process (default), decision, io (input or output), subprocess,
+  document or database. The diagram shapes below also work.
+- Begin with one start, finish every path at an end, and label each link leaving a decision
+  (usually Yes and No).
+- \`lanes\` (optional): swimlanes, one per person, team or system, in order. Put a step in
+  one with \`lane\`. Steps without a lane go in the first lane. Leave lanes out for a plain
+  flowchart.
+- \`direction\`, \`style\`, \`color\` and edge options work as for diagrams below.
+
+### Diagram (architecture, org chart, anything else)
+
+    {
+      "type": "diagram",
       "title": "Checkout",
       "direction": "TB",
       "style": "professional",
@@ -83,12 +119,12 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
       ]
     }
 
-- Required: \`type\`, and \`nodes\` with unique \`id\`s. \`label\` defaults to the id.
+- Required: \`type\` ("diagram"), and \`nodes\` with unique \`id\`s. \`label\` defaults to the id.
 - \`direction\`: "TB" (top to bottom, default) or "LR" (left to right). Layout is automatic,
   so don't give coordinates.
 - \`style\`: "professional" (default) or "sketch" (hand-drawn).
 - \`shape\`: rectangle, rounded (default), ellipse, diamond, parallelogram, cylinder, note,
-  hexagon, triangle, document, cloud, actor.
+  hexagon, triangle, document, cloud, actor, terminal, subroutine.
 - \`icon\` (draws an icon with the label underneath, instead of a shape): ${iconIds.join(", ")}.
 - \`color\`: blue, green, amber, red, purple, grey, yellow.
 - \`group\`: nodes with the same group name are boxed together under that title.

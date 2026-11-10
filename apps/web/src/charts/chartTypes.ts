@@ -64,11 +64,47 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["card", "cards"],
   },
+  flowchart: {
+    id: "flowchart",
+    name: "Flowchart",
+    tagline: "Show a process step by step, with decisions and who does what.",
+    bestFor: [
+      "Business processes and approvals",
+      "Algorithms and program logic",
+      "Support and onboarding flows",
+    ],
+    objects: [
+      { name: "Start / end", description: "Where the process begins and where each path finishes." },
+      {
+        name: "Step",
+        description: "Something that happens. Start the label with a verb, like 'Send invoice'.",
+      },
+      {
+        name: "Decision",
+        description:
+          "A question with two or more answers. Each branch leaving it is labelled, like Yes and No.",
+      },
+      { name: "Input / output", description: "Data coming in or going out, such as a form or a report." },
+      { name: "Subprocess", description: "A step that has its own, separate flowchart." },
+      {
+        name: "Swimlane",
+        description: "A band for one person, team or system. A step belongs to the lane it sits in.",
+      },
+    ],
+    tips: [
+      "Select a step and press Tab to add the next one, already connected.",
+      "Drag the dot on a shape's edge to another shape to connect them. Branches leaving a decision are labelled Yes and No for you.",
+      "Tidy up lays the chart out along its direction and keeps each step in its lane.",
+      "Checks lists steps that can't be reached, decisions without labelled branches and steps that lead nowhere.",
+      "Keep one flowchart to one process. Use a Subprocess step to point to another chart.",
+    ],
+    item: ["step", "steps"],
+  },
   freeform: {
     id: "freeform",
     name: "Freeform diagram",
     tagline: "Shapes and connectors on an open canvas.",
-    bestFor: ["Flowcharts", "System architecture", "Org charts and whiteboard sketches"],
+    bestFor: ["System architecture", "Org charts", "Whiteboard sketches and anything else"],
     objects: [
       { name: "Shape", description: "Rectangles, decisions, databases, sticky notes, groups and text." },
       {
@@ -86,7 +122,7 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
 };
 
 /** Order shown in the chart type picker. */
-export const CHART_TYPE_ORDER: readonly ChartType[] = ["gantt", "kanban", "freeform"];
+export const CHART_TYPE_ORDER: readonly ChartType[] = ["gantt", "kanban", "flowchart", "freeform"];
 
 /** "1 task", "3 cards", "0 shapes". */
 export function countLabel(chartType: ChartType, count: number): string {

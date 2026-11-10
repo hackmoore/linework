@@ -26,6 +26,8 @@ const SHAPE_NAMES: Partial<Record<ShapeKind, string>> = {
   document: "Document",
   cloud: "Cloud",
   actor: "Person",
+  terminal: "Start / end",
+  subroutine: "Subprocess",
 };
 
 function shapeName(kind: ShapeKind): string {

@@ -3,6 +3,7 @@ import type { Diagram, DiagramEdge, DiagramNode, ShapeKind } from "@linework/sha
 import { createEdge, createId, createNode } from "../diagram/factory";
 import { withoutTasks } from "../gantt/model";
 import { withoutCards } from "../kanban/model";
+import { flowEdgeDefaults, flowNodeStyle } from "../flowchart/model";
 import { rectsIntersect, type Rect } from "../render/geometry";
 
 export type Tool = "select" | "connect" | ShapeKind;
@@ -262,7 +263,8 @@ export const useEditor = create<EditorState>()((set, get) => ({
   addNode(kind, cx, cy, overrides = {}) {
     const { diagram, activeLayerId } = get();
     const layerId = diagram ? usableLayerId(diagram, activeLayerId) : undefined;
-    const node = createNode(kind, cx, cy, layerId ? { layerId, ...overrides } : overrides);
+    const flowStyle = diagram?.chartType === "flowchart" ? flowNodeStyle(kind) : {};
+    const node = createNode(kind, cx, cy, { ...flowStyle, ...(layerId ? { layerId } : {}), ...overrides });
     get().commit((d) => ({ ...d, nodes: [...d.nodes, node] }));
     set({ selection: { ...EMPTY_SELECTION, nodeIds: [node.id] } });
     return node.id;
@@ -273,7 +275,11 @@ export const useEditor = create<EditorState>()((set, get) => ({
     if (!diagram || source === target) return null;
     const ids = new Set(diagram.nodes.map((n) => n.id));
     if (!ids.has(source) || !ids.has(target)) return null;
-    const edge = createEdge(source, target);
+    const edge = createEdge(
+      source,
+      target,
+      diagram.chartType === "flowchart" ? flowEdgeDefaults(diagram, source) : {},
+    );
     get().commit((d) => ({ ...d, edges: [...d.edges, edge] }));
     set({ selection: { ...EMPTY_SELECTION, edgeIds: [edge.id] } });
     return edge.id;

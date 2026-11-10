@@ -22,6 +22,7 @@ import { useUi } from "./ui";
 import { currentSession, useLive } from "../collab/session";
 import { editableLayerIds, useEditor, type Viewport } from "./store";
 import { TextEditor } from "./TextEditor";
+import { flowDirection } from "../flowchart/model";
 
 const GRID = 10;
 const GUIDE_THRESHOLD = 6;
@@ -520,7 +521,7 @@ export function Canvas(): ReactElement | null {
                 <path
                   key={edge.id}
                   className="canvas__edge-selected"
-                  d={pointsToPath(edgePoints(edge, s, t))}
+                  d={pointsToPath(edgePoints(edge, s, t, flowDirection(diagram)))}
                   strokeWidth={edge.strokeWidth + 6 * strokeScale}
                 />
               );
@@ -666,7 +667,9 @@ function EdgeTextEditor({ edgeId }: { edgeId: string }): ReactElement | null {
   const source = edge && diagram?.nodes.find((n) => n.id === edge.source);
   const target = edge && diagram?.nodes.find((n) => n.id === edge.target);
   if (!edge || !source || !target) return null;
-  const mid = polylineMidpoint(edgePoints(edge, source, target));
+  const mid = polylineMidpoint(
+    edgePoints(edge, source, target, diagram ? flowDirection(diagram) : undefined),
+  );
   const width = 160 * viewport.zoom;
   const height = 48 * viewport.zoom;
   return (

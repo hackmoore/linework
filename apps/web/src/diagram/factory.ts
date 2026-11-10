@@ -34,6 +34,8 @@ const DEFAULT_SIZE: Readonly<Record<ShapeKind, readonly [number, number]>> = {
   cloud: [170, 110],
   actor: [70, 110],
   icon: [96, 96],
+  terminal: [150, 60],
+  subroutine: [170, 80],
 };
 
 export const DEFAULT_LABEL: Readonly<Record<ShapeKind, string>> = {
@@ -52,6 +54,8 @@ export const DEFAULT_LABEL: Readonly<Record<ShapeKind, string>> = {
   cloud: "Internet",
   actor: "User",
   icon: "Icon",
+  terminal: "Start",
+  subroutine: "Subprocess",
 };
 
 export function defaultSize(kind: ShapeKind): { width: number; height: number } {
@@ -127,6 +131,9 @@ export function createDiagram(
     edges: [],
     layers: [createLayer("Layer 1", DEFAULT_LAYER_ID)],
     comments: [],
+    ...(chartType === "flowchart"
+      ? { flowchart: { direction: "TB" as const, laneStart: 0, lanes: [] } }
+      : {}),
     createdAt: now,
     updatedAt: now,
   };

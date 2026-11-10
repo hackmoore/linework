@@ -1,8 +1,16 @@
 import { memo, useMemo, type ReactElement, type ReactNode } from "react";
 import rough from "roughjs";
-import type { Arrowhead, Diagram, DiagramEdge, DiagramNode, StrokePattern } from "@linework/shared";
+import type {
+  Arrowhead,
+  Diagram,
+  DiagramEdge,
+  DiagramNode,
+  FlowDirection,
+  StrokePattern,
+} from "@linework/shared";
 import { getStyle, type DiagramStyle } from "../diagram/styles";
 import { getIcon } from "../library/icons";
+import { flowDirection, laneBands, type LaneBand } from "../flowchart/model";
 import {
   edgePoints,
   pointsToPath,
@@ -253,6 +261,8 @@ interface EdgeViewProps {
   readonly target: DiagramNode;
   readonly style: DiagramStyle;
   readonly labelBackground: string;
+  /** Flowchart direction, for routing loops; undefined for other diagrams. */
+  readonly flow: FlowDirection | undefined;
 }
 
 const EdgeView = memo(function EdgeView({
@@ -261,8 +271,9 @@ const EdgeView = memo(function EdgeView({
   target,
   style,
   labelBackground,
+  flow,
 }: EdgeViewProps): ReactElement {
-  const points = edgePoints(edge, source, target);
+  const points = edgePoints(edge, source, target, flow);
   const d = pointsToPath(points);
   const size = 8 + edge.strokeWidth * 2;
   const last = points[points.length - 1];
@@ -356,6 +367,49 @@ export function visibleNodesInOrder(diagram: Diagram): DiagramNode[] {
     .map((entry) => entry.node);
 }
 
+const tint = (color: string, alpha: string): string => `${color.slice(0, 7)}${alpha}`;
+
+/** Flowchart swimlanes: a tinted band per lane with its name in a header strip. */
+function LaneView({ band, vertical }: { band: LaneBand; vertical: boolean }): ReactElement {
+  const { lane, header } = band;
+  const cx = header.x + header.width / 2;
+  const cy = header.y + header.height / 2;
+  return (
+    <g data-lane-id={lane.id}>
+      <rect
+        x={band.x}
+        y={band.y}
+        width={band.width}
+        height={band.height}
+        fill={tint(lane.color, band.index % 2 === 0 ? "0a" : "14")}
+        stroke={tint(lane.color, "55")}
+        strokeWidth={1}
+      />
+      <rect
+        x={header.x}
+        y={header.y}
+        width={header.width}
+        height={header.height}
+        fill={tint(lane.color, "26")}
+        stroke={tint(lane.color, "55")}
+        strokeWidth={1}
+      />
+      <text
+        x={cx}
+        y={cy}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={14}
+        fontWeight={700}
+        fill={lane.color}
+        transform={vertical ? undefined : `rotate(-90 ${String(cx)} ${String(cy)})`}
+      >
+        {lane.name || "Untitled lane"}
+      </text>
+    </g>
+  );
+}
+
 export interface DiagramContentProps {
   readonly diagram: Diagram;
   /** Node whose label is hidden because it is being edited in place. */
@@ -370,8 +424,14 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
   const containers = visibleNodes.filter((n) => n.kind === "container");
   const others = visibleNodes.filter((n) => n.kind !== "container");
   const labelBackground = diagram.background === "transparent" ? "#ffffff" : diagram.background;
+  const lanes = useMemo(() => laneBands(diagram), [diagram]);
+  const vertical = diagram.flowchart?.direction !== "LR";
+  const flow = flowDirection(diagram);
   return (
     <g fontFamily={style.fontFamily}>
+      {lanes.map((band) => (
+        <LaneView key={band.lane.id} band={band} vertical={vertical} />
+      ))}
       {containers.map((node) => (
         <NodeView key={node.id} node={node} style={style} hideLabel={node.id === editingNodeId} />
       ))}
@@ -387,6 +447,7 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
             target={target}
             style={style}
             labelBackground={labelBackground}
+            flow={flow}
           />
         );
       })}

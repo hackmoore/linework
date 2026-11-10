@@ -10,12 +10,14 @@ const EXAMPLES: Readonly<Record<AiChartKind, string>> = {
   kanban:
     "A sprint board for a 4-person mobile team: backlog, to do, in progress (limit 3), review and done. Include a couple of bugs and a release task.",
   flowchart:
+    "How a support ticket is handled: the customer submits it, support triages it, engineering fixes bugs, and support replies and closes it. Use swimlanes for customer, support and engineering.",
+  diagram:
     "Architecture of a food delivery app: mobile app and web app, API gateway, orders, payments and notifications services, a Postgres database and a message queue.",
 };
 
 /** "Generate with AI" dialog: describe a chart, get a new diagram. Uses the user's own Anthropic API key. */
 export function AiDialog({
-  initialKind = "flowchart",
+  initialKind = "diagram",
   onClose,
 }: {
   initialKind?: AiChartKind;
@@ -84,7 +86,7 @@ export function AiDialog({
           </button>
         </div>
         <div className="segmented segmented--full" role="radiogroup" aria-label="Chart type">
-          {(["flowchart", "gantt", "kanban"] as const).map((k) => (
+          {(["flowchart", "gantt", "kanban", "diagram"] as const).map((k) => (
             <button
               key={k}
               type="button"
@@ -95,7 +97,13 @@ export function AiDialog({
                 setKind(k);
               }}
             >
-              {k === "gantt" ? "Gantt chart" : k === "kanban" ? "Kanban board" : "Diagram"}
+              {k === "gantt"
+                ? "Gantt"
+                : k === "kanban"
+                  ? "Kanban"
+                  : k === "flowchart"
+                    ? "Flowchart"
+                    : "Diagram"}
             </button>
           ))}
         </div>

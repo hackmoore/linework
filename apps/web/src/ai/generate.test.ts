@@ -39,7 +39,7 @@ describe("generateChart", () => {
     };
     const fetchMock = vi.fn(() => Promise.resolve(reply(message(JSON.stringify(output)))));
     vi.stubGlobal("fetch", fetchMock);
-    const result = await generateChart("flowchart", "checkout architecture", "sk-ant-test");
+    const result = await generateChart("diagram", "checkout architecture", "sk-ant-test");
     if (!result.ok) throw new Error(result.error);
     expect(parseDiagram(result.diagram).ok).toBe(true);
     expect(result.diagram.title).toBe("Checkout");
@@ -48,6 +48,35 @@ describe("generateChart", () => {
     expect(body.model).toBe("claude-opus-5-5");
     expect(body.fallbacks).toBe("default");
     expect((body.output_config as { format: { type: string } }).format.type).toBe("json_schema");
+  });
+
+  it("builds flowcharts with swimlanes from the flowchart output", async () => {
+    const output = {
+      title: "Tickets",
+      direction: "TB",
+      lanes: ["Customer", "Support"],
+      steps: [
+        { id: "s", label: "Start", kind: "start", lane: "Customer" },
+        { id: "t", label: "Triage ticket", kind: "process", lane: "Support" },
+        { id: "q", label: "Bug?", kind: "decision", lane: "Support" },
+        { id: "e", label: "Done", kind: "end", lane: "Nowhere" },
+      ],
+      links: [
+        { from: "s", to: "t", label: null },
+        { from: "t", to: "q", label: null },
+        { from: "q", to: "e", label: "No" },
+      ],
+    };
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(reply(message(JSON.stringify(output))))),
+    );
+    const result = await generateChart("flowchart", "ticket process", "sk-ant-test");
+    if (!result.ok) throw new Error(result.error);
+    expect(parseDiagram(result.diagram).ok).toBe(true);
+    expect(result.diagram.chartType).toBe("flowchart");
+    expect(result.diagram.flowchart?.lanes.map((l) => l.name)).toEqual(["Customer", "Support"]);
+    expect(result.diagram.nodes.find((n) => n.label === "Start")?.kind).toBe("terminal");
   });
 
   it("explains refusals and bad keys", async () => {

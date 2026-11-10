@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } 
 import type { Diagram } from "@linework/shared";
 import { chartDrawing } from "../charts/ChartSvg";
 import { DiagramContent, visibleNodesInOrder } from "../render/DiagramSvg";
-import { boundsOf, type Rect } from "../render/geometry";
+import { type Rect } from "../render/geometry";
+import { contentBounds, laneBands } from "../flowchart/model";
 
 interface Slide {
   readonly title: string;
@@ -10,12 +11,13 @@ interface Slide {
 }
 
 /**
- * Slides for a freeform diagram: the whole diagram first, then each group (container)
- * in reading order, so a diagram laid out in groups presents as a walkthrough.
+ * Slides for a freeform diagram or flowchart: the whole diagram first, then each swimlane
+ * and each group (container) in reading order, so a diagram laid out in lanes or groups
+ * presents as a walkthrough.
  */
 export function slidesFor(diagram: Diagram): Slide[] {
   const nodes = visibleNodesInOrder(diagram);
-  const all = boundsOf(nodes);
+  const all = contentBounds(diagram, nodes);
   if (!all) return [{ title: diagram.title, bounds: { x: 0, y: 0, width: 800, height: 450 } }];
   const groups = nodes
     .filter((n) => n.kind === "container")
@@ -24,7 +26,11 @@ export function slidesFor(diagram: Diagram): Slide[] {
       title: n.label || "Group",
       bounds: { x: n.x, y: n.y, width: n.width, height: n.height },
     }));
-  return [{ title: diagram.title, bounds: all }, ...groups];
+  const lanes = laneBands(diagram).map((band) => ({
+    title: band.lane.name || "Lane",
+    bounds: { x: band.x, y: band.y, width: band.width, height: band.height },
+  }));
+  return [{ title: diagram.title, bounds: all }, ...lanes, ...groups];
 }
 
 const PAD = 40;

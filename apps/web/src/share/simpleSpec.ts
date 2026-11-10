@@ -11,12 +11,15 @@ import {
   type GanttTask,
   type KanbanCard,
   type KanbanColumn,
+  type ShapeKind,
 } from "@linework/shared";
 import { createDiagram, createEdge, createNode } from "../diagram/factory";
 import { layeredLayout, withPositions } from "../editor/arrange";
 import { addDays, createGanttData, createSection, createTask, finishToStart, todayIso } from "../gantt/model";
 import { autoSchedule, calendarOf, placeAt } from "../gantt/schedule";
 import { createCard, createColumn, createLane } from "../kanban/model";
+import { tidyFlowchart } from "../flowchart/layout";
+import { createFlowchartData, createFlowLane, DEFAULT_LANE_SIZE, flowNodeStyle } from "../flowchart/model";
 import { ICONS } from "../library/icons";
 import { boundsOf } from "../render/geometry";
 
@@ -50,21 +53,38 @@ const SECTION_HEX: Readonly<Record<keyof typeof COLORS, string>> = {
 const text = (max: number): z.ZodString => z.string().max(max);
 const color = z.enum(SPEC_COLORS as [keyof typeof COLORS, ...(keyof typeof COLORS)[]]).optional();
 const SHAPES = SHAPE_KINDS.filter((k) => k !== "icon" && k !== "container" && k !== "text");
+/** Friendlier flowchart names accepted alongside shape kinds. */
+const SHAPE_ALIASES: Readonly<Record<string, ShapeKind>> = {
+  start: "terminal",
+  end: "terminal",
+  process: "rectangle",
+  step: "rectangle",
+  decision: "diamond",
+  io: "parallelogram",
+  input: "parallelogram",
+  output: "parallelogram",
+  subprocess: "subroutine",
+  database: "cylinder",
+};
+const SHAPE_NAMES = [...SHAPES, ...Object.keys(SHAPE_ALIASES)];
 
 const flowSchema = z.object({
   type: z.enum(["flowchart", "freeform", "diagram"]),
   title: text(200).optional(),
   direction: z.enum(["TB", "LR"]).optional(),
   style: z.enum(["professional", "sketch"]).optional(),
+  /** Flowchart swimlane order; lanes named on nodes but missing here are added after these. */
+  lanes: z.array(text(100).min(1)).max(30).optional(),
   nodes: z
     .array(
       z.object({
         id: text(64).min(1),
         label: text(5_000).optional(),
-        shape: z.enum(SHAPES as [string, ...string[]]).optional(),
+        shape: z.enum(SHAPE_NAMES as [string, ...string[]]).optional(),
         icon: z.enum(ICONS.map((i) => i.id) as [string, ...string[]]).optional(),
         color,
         group: text(200).optional(),
+        lane: text(100).min(1).optional(),
       }),
     )
     .min(1)
@@ -163,12 +183,14 @@ export function parseSimpleSpec(input: unknown): SpecResult {
 }
 
 function buildFlow(spec: z.infer<typeof flowSchema>): SpecResult {
+  const isFlowchart = spec.type === "flowchart";
   const ids = new Map<string, string>();
   const nodes: DiagramNode[] = [];
   for (const n of spec.nodes) {
     if (ids.has(n.id)) return { ok: false, error: `Duplicate node id "${n.id}"` };
     const label = n.label ?? n.id;
-    const kind = n.icon ? "icon" : ((n.shape ?? "rounded") as DiagramNode["kind"]);
+    const named = n.shape ? (SHAPE_ALIASES[n.shape] ?? (n.shape as ShapeKind)) : null;
+    const kind: ShapeKind = n.icon ? "icon" : (named ?? (isFlowchart ? "rectangle" : "rounded"));
     const longest = Math.max(...label.split("\n").map((l) => l.length));
     const size =
       kind === "icon"
@@ -179,6 +201,7 @@ function buildFlow(spec: z.infer<typeof flowSchema>): SpecResult {
           };
     const colors = n.color ? COLORS[n.color] : null;
     const node = createNode(kind, 0, 0, {
+      ...(isFlowchart ? flowNodeStyle(kind) : {}),
       label,
       ...size,
       ...(n.icon ? { icon: n.icon } : {}),
@@ -204,6 +227,7 @@ function buildFlow(spec: z.infer<typeof flowSchema>): SpecResult {
       }),
     );
   }
+  if (isFlowchart) return buildFlowchart(spec, nodes, edges, ids);
   let diagram: Diagram = {
     ...createDiagram(spec.title ?? "Untitled diagram", spec.style ?? "professional"),
     nodes,
@@ -211,7 +235,15 @@ function buildFlow(spec: z.infer<typeof flowSchema>): SpecResult {
   };
   diagram = withPositions(diagram, layeredLayout(nodes, edges, spec.direction ?? "TB"));
 
-  // Groups are drawn around their members after layout.
+  return { ok: true, diagram: withGroups(diagram, spec, ids) };
+}
+
+/** Draws a box around each named group's members, after layout. */
+function withGroups(
+  diagram: Diagram,
+  spec: z.infer<typeof flowSchema>,
+  ids: ReadonlyMap<string, string>,
+): Diagram {
   const groups = new Map<string, string[]>();
   for (const n of spec.nodes) {
     const id = ids.get(n.id);
@@ -231,7 +263,38 @@ function buildFlow(spec: z.infer<typeof flowSchema>): SpecResult {
       }),
     );
   }
-  return { ok: true, diagram: { ...diagram, nodes: [...containers, ...diagram.nodes] } };
+  return containers.length === 0 ? diagram : { ...diagram, nodes: [...containers, ...diagram.nodes] };
+}
+
+/** A flowchart: steps in swimlanes (when any are named), laid out along the direction. */
+function buildFlowchart(
+  spec: z.infer<typeof flowSchema>,
+  nodes: DiagramNode[],
+  edges: DiagramEdge[],
+  ids: ReadonlyMap<string, string>,
+): SpecResult {
+  const direction = spec.direction ?? "TB";
+  const laneNames = [...(spec.lanes ?? [])];
+  for (const n of spec.nodes) if (n.lane && !laneNames.includes(n.lane)) laneNames.push(n.lane);
+  if (laneNames.length > 30) return { ok: false, error: "A flowchart can have up to 30 lanes" };
+  const lanes = laneNames.map((name, i) => createFlowLane(name, i));
+  // Seed each step into its lane (the first lane when none is named) so tidying keeps it there.
+  const laneOfNode = new Map(spec.nodes.map((n) => [ids.get(n.id), laneNames.indexOf(n.lane ?? "")]));
+  const placed = nodes.map((node) => {
+    if (lanes.length === 0) return node;
+    const index = Math.max(0, laneOfNode.get(node.id) ?? 0);
+    const centre = index * DEFAULT_LANE_SIZE + DEFAULT_LANE_SIZE / 2;
+    return direction === "TB"
+      ? { ...node, x: Math.round(centre - node.width / 2) }
+      : { ...node, y: Math.round(centre - node.height / 2) };
+  });
+  const diagram = tidyFlowchart({
+    ...createDiagram(spec.title ?? "Untitled flowchart", spec.style ?? "professional", "flowchart"),
+    nodes: placed,
+    edges,
+    flowchart: { ...createFlowchartData(direction), lanes },
+  });
+  return { ok: true, diagram: withGroups(diagram, spec, ids) };
 }
 
 function buildGantt(spec: z.infer<typeof ganttSchema>): Diagram {

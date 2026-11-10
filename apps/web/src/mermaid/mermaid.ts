@@ -12,10 +12,12 @@ import {
   type StrokePattern,
 } from "@linework/shared";
 import { createDiagram, createEdge, createNode, defaultSize } from "../diagram/factory";
-import { layeredLayout, withPositions, type LayoutDirection } from "../editor/arrange";
+import type { LayoutDirection } from "../editor/arrange";
 import { createGanttData, createSection, createTask, finishToStart } from "../gantt/model";
 import { autoSchedule, calendarOf, placeAt, spanOf } from "../gantt/schedule";
 import { kanbanToMermaid, parseMermaidKanban } from "../kanban/io";
+import { tidyFlowchart } from "../flowchart/layout";
+import { createFlowchartData, createFlowLane, flowNodeStyle, laneOf } from "../flowchart/model";
 import { boundsOf } from "../render/geometry";
 
 /*
@@ -52,8 +54,8 @@ export function parseMermaid(text: string): MermaidResult {
 // ---------------------------------------------------------------- flowchart import
 
 const SHAPES: readonly (readonly [string, string, ShapeKind])[] = [
-  ["([", "])", "rounded"],
-  ["[[", "]]", "rectangle"],
+  ["([", "])", "terminal"],
+  ["[[", "]]", "subroutine"],
   ["[(", ")]", "cylinder"],
   ["((", "))", "ellipse"],
   ["{{", "}}", "hexagon"],
@@ -267,7 +269,7 @@ function parseFlowchart(lines: string[]): MermaidResult {
   const created: DiagramNode[] = [...nodes.values()].map((n) => {
     const kind = n.kind ?? "rectangle";
     const label = n.label ?? n.id;
-    const node = createNode(kind, 0, 0, { label, ...sizeFor(kind, label) });
+    const node = createNode(kind, 0, 0, { ...flowNodeStyle(kind), label, ...sizeFor(kind, label) });
     idMap.set(n.id, node.id);
     return node;
   });
@@ -287,16 +289,56 @@ function parseFlowchart(lines: string[]): MermaidResult {
     ];
   });
 
-  let diagram: Diagram = { ...createDiagram("Imported flowchart"), nodes: created, edges };
-  diagram = withPositions(diagram, layeredLayout(created, edges, direction));
+  const base: Diagram = {
+    ...createDiagram("Imported flowchart", "professional", "flowchart"),
+    nodes: created,
+    edges,
+    flowchart: { ...createFlowchartData(direction), lanes: [] },
+  };
 
-  // Subgraphs become groups drawn around their members, innermost last so they stay on top.
+  // Top-level subgraphs that split every node between them read as swimlanes.
+  const memberIds = subgraphs.map((g) => new Set([...g.members].flatMap((id) => idMap.get(id) ?? [])));
+  const nested = subgraphs.some((g, i) =>
+    subgraphs.some((h, j) => i !== j && [...g.members].every((m) => h.members.has(m))),
+  );
+  const assigned = memberIds.reduce((n, set) => n + set.size, 0);
+  const asLanes =
+    subgraphs.length > 0 &&
+    subgraphs.length <= 30 &&
+    !nested &&
+    assigned === created.length &&
+    new Set(memberIds.flatMap((set) => [...set])).size === created.length;
+  if (asLanes) {
+    const lanes = subgraphs.map((g, i) =>
+      createFlowLane(g.title.slice(0, 100) || `Lane ${String(i + 1)}`, i),
+    );
+    // Seed each node into its lane so tidying keeps it there.
+    const starts = new Map(lanes.map((lane, i) => [lane.id, i * lane.size]));
+    const nodes = created.map((n) => {
+      const index = memberIds.findIndex((set) => set.has(n.id));
+      const lane = lanes[index];
+      const start = lane ? (starts.get(lane.id) ?? 0) : 0;
+      const centre = start + (lane?.size ?? 0) / 2;
+      return direction === "TB"
+        ? { ...n, x: Math.round(centre - n.width / 2) }
+        : { ...n, y: Math.round(centre - n.height / 2) };
+    });
+    const diagram = tidyFlowchart({
+      ...base,
+      nodes,
+      flowchart: { ...createFlowchartData(direction), lanes },
+    });
+    return { ok: true, diagram, skipped };
+  }
+
+  let diagram = tidyFlowchart(base);
+  // Other subgraphs become groups drawn around their members.
   const padding = 24;
   const containers: DiagramNode[] = [];
-  for (const group of subgraphs) {
-    const members = diagram.nodes.filter((n) => [...group.members].some((id) => idMap.get(id) === n.id));
-    const bounds = boundsOf(members);
-    if (!bounds) continue;
+  for (const members of memberIds) {
+    const bounds = boundsOf(diagram.nodes.filter((n) => members.has(n.id)));
+    const group = subgraphs[memberIds.indexOf(members)];
+    if (!bounds || !group) continue;
     containers.push(
       createNode("container", 0, 0, {
         label: group.title,
@@ -454,10 +496,13 @@ const KIND_SYNTAX: Readonly<Record<ShapeKind, readonly [string, string]>> = {
   cloud: ["(", ")"],
   actor: ["([", "])"],
   icon: ["[", "]"],
+  terminal: ["([", "])"],
+  subroutine: ["[[", "]]"],
 };
 
 function flowchartToMermaid(diagram: Diagram): string {
-  const lines = ["flowchart TD"];
+  const flow = diagram.chartType === "flowchart" ? diagram.flowchart : undefined;
+  const lines = [flow?.direction === "LR" ? "flowchart LR" : "flowchart TD"];
   const ids = new Map<string, string>();
   const shapes = diagram.nodes.filter((n) => n.kind !== "container");
   shapes.forEach((n, i) => ids.set(n.id, `n${String(i + 1)}`));
@@ -469,6 +514,17 @@ function flowchartToMermaid(diagram: Diagram): string {
     const [open, close] = KIND_SYNTAX[n.kind];
     return `${indent}${ids.get(n.id) ?? n.id}${open}${mermaidLabel(n.label || " ")}${close}`;
   };
+  // Swimlanes export as subgraphs.
+  flow?.lanes.forEach((lane, i) => {
+    const members = shapes.filter((n) => !placed.has(n.id) && laneOf(flow, n) === lane.id);
+    if (members.length === 0) return;
+    lines.push(`  subgraph lane${String(i + 1)}[${mermaidLabel(lane.name || "Lane")}]`);
+    for (const n of members) {
+      lines.push(nodeLine(n, "    "));
+      placed.add(n.id);
+    }
+    lines.push("  end");
+  });
   containers.forEach((c, i) => {
     const members = shapes.filter((n) => !placed.has(n.id) && inside(n, c));
     if (members.length === 0) return;

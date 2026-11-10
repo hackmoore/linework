@@ -3,6 +3,7 @@ import {
   type Diagram,
   type GanttData,
   type GanttDependency,
+  type FlowchartData,
   type KanbanData,
 } from "@linework/shared";
 
@@ -46,7 +47,8 @@ type CollectionName =
   | "gantt.sections"
   | "kanban.columns"
   | "kanban.lanes"
-  | "kanban.cards";
+  | "kanban.cards"
+  | "flowchart.lanes";
 const COLLECTIONS: readonly CollectionName[] = [
   "nodes",
   "edges",
@@ -57,7 +59,9 @@ const COLLECTIONS: readonly CollectionName[] = [
   "kanban.columns",
   "kanban.lanes",
   "kanban.cards",
+  "flowchart.lanes",
 ];
+const FLOWCHART_SCALARS = ["direction", "laneStart"] as const;
 
 function getCollection(d: Diagram, name: CollectionName): readonly Item[] {
   switch (name) {
@@ -71,6 +75,8 @@ function getCollection(d: Diagram, name: CollectionName): readonly Item[] {
       return d.kanban?.lanes ?? [];
     case "kanban.cards":
       return d.kanban?.cards ?? [];
+    case "flowchart.lanes":
+      return d.flowchart?.lanes ?? [];
     default:
       return d[name];
   }
@@ -84,6 +90,11 @@ export function diffDiagrams(prev: Diagram, next: Diagram): DiagramPatch | null 
   if (next.gantt) {
     for (const key of GANTT_SCALARS)
       if (!prev.gantt || !same(prev.gantt[key], next.gantt[key])) set[`gantt.${key}`] = next.gantt[key];
+  }
+  if (next.flowchart) {
+    for (const key of FLOWCHART_SCALARS)
+      if (!prev.flowchart || !same(prev.flowchart[key], next.flowchart[key]))
+        set[`flowchart.${key}`] = next.flowchart[key];
   }
   const collections: Record<string, CollectionPatch> = {};
   for (const name of COLLECTIONS) {
@@ -171,6 +182,18 @@ export function applyPatch(doc: Diagram, patch: DiagramPatch): Diagram {
         cards: applyCollection(base.cards, patch.collections["kanban.cards"]),
       },
     };
+  }
+  const flowTouched =
+    "flowchart.lanes" in patch.collections || FLOWCHART_SCALARS.some((k) => `flowchart.${k}` in s);
+  if (doc.flowchart || flowTouched) {
+    const base: FlowchartData = doc.flowchart ?? { direction: "TB", laneStart: 0, lanes: [] };
+    let flowchart: FlowchartData = {
+      ...base,
+      lanes: applyCollection(base.lanes, patch.collections["flowchart.lanes"]),
+    };
+    for (const key of FLOWCHART_SCALARS)
+      if (`flowchart.${key}` in s) flowchart = { ...flowchart, [key]: s[`flowchart.${key}`] };
+    next = { ...next, flowchart };
   }
   return repair(next);
 }

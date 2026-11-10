@@ -2,7 +2,7 @@ import { useMemo, type ReactElement } from "react";
 import { itemCount, type Diagram } from "@linework/shared";
 import { chartDrawing } from "../charts/ChartSvg";
 import { DiagramContent } from "../render/DiagramSvg";
-import { boundsOf } from "../render/geometry";
+import { contentBounds } from "../flowchart/model";
 import { buildTemplate } from "../templates/build";
 import type { TemplateId } from "../templates/catalog";
 
@@ -19,7 +19,7 @@ function isEmpty(diagram: Diagram): boolean {
 export function TemplateThumbnail({ templateId }: TemplateThumbnailProps): ReactElement {
   const diagram = useMemo(() => buildTemplate(templateId), [templateId]);
 
-  const chart = diagram.chartType === "freeform" || isEmpty(diagram) ? null : chartDrawing(diagram);
+  const chart = isEmpty(diagram) ? null : chartDrawing(diagram);
   if (chart) {
     return (
       <svg
@@ -33,7 +33,7 @@ export function TemplateThumbnail({ templateId }: TemplateThumbnailProps): React
     );
   }
 
-  const bounds = boundsOf(diagram.nodes);
+  const bounds = contentBounds(diagram);
   if (!bounds) {
     return (
       <svg viewBox="0 0 160 90" role="img" aria-label="Blank preview">

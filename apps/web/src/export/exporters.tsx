@@ -4,7 +4,7 @@ import type { Diagram } from "@linework/shared";
 import { chartDrawing } from "../charts/ChartSvg";
 import { DiagramContent, visibleNodesInOrder } from "../render/DiagramSvg";
 import { embeddedFontCss } from "./fonts";
-import { boundsOf } from "../render/geometry";
+import { contentBounds } from "../flowchart/model";
 
 const EXPORT_PADDING = 32;
 
@@ -39,7 +39,12 @@ export function diagramToSvg(
     );
     return { svg: `<?xml version="1.0" encoding="UTF-8"?>\n${markup}`, width, height };
   }
-  const bounds = boundsOf(visibleNodesInOrder(diagram)) ?? { x: 0, y: 0, width: 200, height: 120 };
+  const bounds = contentBounds(diagram, visibleNodesInOrder(diagram)) ?? {
+    x: 0,
+    y: 0,
+    width: 200,
+    height: 120,
+  };
   const x = bounds.x - EXPORT_PADDING;
   const y = bounds.y - EXPORT_PADDING;
   const width = Math.ceil(bounds.width + EXPORT_PADDING * 2);

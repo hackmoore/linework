@@ -19,6 +19,8 @@ import {
   todayIso,
 } from "../gantt/model";
 import { createCard, createColumn, createKanbanData } from "../kanban/model";
+import { tidyFlowchart } from "../flowchart/layout";
+import { createFlowchartData, createFlowLane, flowNodeStyle } from "../flowchart/model";
 import { TEMPLATE_CATALOG, type TemplateId } from "./catalog";
 
 type NodeOverrides = Partial<Omit<DiagramNode, "kind">>;
@@ -58,19 +60,47 @@ const AMBER = { fill: "#fff4e0", stroke: "#b45309" };
 const PURPLE = { fill: "#f1ebff", stroke: "#6d28d9" };
 const GREY = { fill: "#f3f4f6", stroke: "#4b5563" };
 
+/** Adds a flowchart step with the flowchart colours for its kind. */
+function step(b: TemplateBuilder, key: string, kind: ShapeKind, cx: number, cy: number, label: string): void {
+  b.node(key, kind, cx, cy, label, flowNodeStyle(kind));
+}
+
+const ELBOW = { routing: "elbow" } as const;
+
 function flowchart(b: TemplateBuilder): void {
-  b.node("start", "rounded", 300, 60, "Start", GREEN)
-    .node("input", "parallelogram", 300, 180, "Receive request")
-    .node("valid", "diamond", 300, 320, "Valid?", AMBER)
-    .node("process", "rectangle", 300, 460, "Process request")
-    .node("reject", "rectangle", 560, 320, "Return error", { stroke: "#b91c1c" })
-    .node("end", "rounded", 300, 580, "Done", GREEN)
-    .edge("start", "input")
-    .edge("input", "valid")
-    .edge("valid", "process", { label: "yes" })
-    .edge("valid", "reject", { label: "no" })
-    .edge("process", "end")
-    .edge("reject", "end", { routing: "elbow" });
+  step(b, "start", "terminal", 300, 60, "Start");
+  step(b, "input", "parallelogram", 300, 180, "Receive request");
+  step(b, "valid", "diamond", 300, 320, "Valid?");
+  step(b, "process", "rectangle", 300, 460, "Process request");
+  step(b, "reject", "rectangle", 560, 460, "Return error");
+  step(b, "end", "terminal", 300, 580, "Done");
+  b.edge("start", "input", ELBOW)
+    .edge("input", "valid", ELBOW)
+    .edge("valid", "process", { ...ELBOW, label: "Yes" })
+    .edge("valid", "reject", { ...ELBOW, label: "No" })
+    .edge("process", "end", ELBOW)
+    .edge("reject", "end", ELBOW);
+}
+
+/** Expense approval across three lanes. Steps start in their lane's column; tidying ranks them. */
+function approval(b: TemplateBuilder): void {
+  const lane = (i: number): number => 130 + i * 260;
+  step(b, "start", "terminal", lane(0), 0, "Start");
+  step(b, "submit", "parallelogram", lane(0), 1, "Submit expense claim");
+  step(b, "review", "rectangle", lane(1), 2, "Review claim");
+  step(b, "ok", "diamond", lane(1), 3, "Approved?");
+  step(b, "fix", "rectangle", lane(0), 4, "Fix and resubmit");
+  step(b, "pay", "subroutine", lane(2), 4, "Pay expenses");
+  step(b, "record", "cylinder", lane(2), 5, "Record in ledger");
+  step(b, "end", "terminal", lane(2), 6, "Done");
+  b.edge("start", "submit", ELBOW)
+    .edge("submit", "review", ELBOW)
+    .edge("review", "ok", ELBOW)
+    .edge("ok", "pay", { ...ELBOW, label: "Yes" })
+    .edge("ok", "fix", { ...ELBOW, label: "No" })
+    .edge("fix", "review", ELBOW)
+    .edge("pay", "record", ELBOW)
+    .edge("record", "end", ELBOW);
 }
 
 function architecture(b: TemplateBuilder): void {
@@ -156,7 +186,6 @@ function orgChart(b: TemplateBuilder): void {
 }
 
 const BUILDERS: Readonly<Partial<Record<TemplateId, (b: TemplateBuilder) => void>>> = {
-  flowchart,
   architecture,
   roadmap,
   "org-chart": orgChart,
@@ -254,6 +283,9 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
     const title = templateId === "kanban" ? (info?.name ?? "Sprint board") : "Untitled board";
     return { ...createDiagram(title, styleId, "kanban"), kanban };
   }
+  if (templateId === "flowchart-blank" || templateId === "flowchart" || templateId === "flowchart-approval") {
+    return flowchartTemplate(templateId, styleId, info?.name ?? "Flowchart");
+  }
   const title = templateId === "blank" || !info ? "Untitled diagram" : info.name;
   const diagram = createDiagram(title, styleId);
   const build = BUILDERS[templateId];
@@ -261,4 +293,30 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
   const builder = new TemplateBuilder();
   build(builder);
   return { ...diagram, nodes: builder.nodes, edges: builder.edges };
+}
+
+function flowchartTemplate(
+  templateId: "flowchart-blank" | "flowchart" | "flowchart-approval",
+  styleId: StyleId,
+  name: string,
+): Diagram {
+  const diagram = createDiagram(
+    templateId === "flowchart-blank" ? "Untitled flowchart" : name,
+    styleId,
+    "flowchart",
+  );
+  if (templateId === "flowchart-blank") return diagram;
+  const builder = new TemplateBuilder();
+  if (templateId === "flowchart") {
+    flowchart(builder);
+    return tidyFlowchart({ ...diagram, nodes: builder.nodes, edges: builder.edges });
+  }
+  approval(builder);
+  const lanes = ["Employee", "Manager", "Finance"].map((laneName, i) => createFlowLane(laneName, i, 260));
+  return tidyFlowchart({
+    ...diagram,
+    nodes: builder.nodes,
+    edges: builder.edges,
+    flowchart: { ...createFlowchartData("TB"), lanes },
+  });
 }

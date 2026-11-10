@@ -18,7 +18,7 @@ import { parseSimpleSpec, SPEC_COLORS } from "../share/simpleSpec";
 export const AI_MODEL = "claude-opus-5-5";
 const KEY_STORAGE = "linework.anthropicApiKey";
 
-export type AiChartKind = "flowchart" | "gantt" | "kanban";
+export type AiChartKind = "diagram" | "flowchart" | "gantt" | "kanban";
 
 export function loadApiKey(): string {
   try {
@@ -81,6 +81,31 @@ const flowOutput = z.object({
       to: z.string(),
       label: z.string().nullable(),
       style: z.enum(["solid", "dashed", "dotted"]).nullable(),
+    }),
+  ),
+});
+
+const flowchartOutput = z.object({
+  title: z.string().describe("Short chart title"),
+  direction: z.enum(["TB", "LR"]).describe("TB for most processes; LR for wide flows with few branches"),
+  lanes: z
+    .array(z.string())
+    .describe("Swimlanes in order, one per person, team or system; empty when the user names no roles"),
+  steps: z.array(
+    z.object({
+      id: z.string().describe("Short unique id, letters and digits"),
+      label: z.string().describe("Text on the step; start actions with a verb; under 40 characters"),
+      kind: z
+        .enum(["start", "end", "process", "decision", "io", "subprocess", "document", "database"])
+        .describe("start and end for terminals, decision for questions, io for inputs and outputs"),
+      lane: z.string().nullable().describe("One of the lanes, or null when there are no lanes"),
+    }),
+  ),
+  links: z.array(
+    z.object({
+      from: z.string(),
+      to: z.string(),
+      label: z.string().nullable().describe("Branch answer such as Yes or No for links leaving a decision"),
     }),
   ),
 });
@@ -159,9 +184,19 @@ function systemPrompt(kind: AiChartKind): string {
       "Set WIP limits on in-progress style columns. Use swimlanes only for teams, clients or classes of work the user mentions.",
     ].join("\n");
   }
+  if (kind === "flowchart") {
+    return [
+      ...common,
+      "Produce a flowchart of one process. Layout is automatic, so don't think about positions.",
+      "Begin with one start step and finish every path at an end step. Every other step must lead to a next step.",
+      "Use decisions for questions, with one labelled link per answer (usually Yes and No). Loops back to earlier steps are fine.",
+      "Add swimlanes only when the process involves different people, teams or systems, and put every step in a lane.",
+      "Every link must connect existing step ids.",
+    ].join("\n");
+  }
   return [
     ...common,
-    "Produce a diagram: flowchart, architecture, org chart or process. Layout is automatic, so don't think about positions.",
+    "Produce a diagram: architecture, org chart, mind map or process. Layout is automatic, so don't think about positions.",
     "Use diamonds for decisions with labelled outgoing edges (yes/no), cylinders for data stores, icons for systems, users and services in architecture diagrams, and groups for boundaries such as services, teams or environments.",
     "Every edge must connect existing node ids.",
   ].join("\n");
@@ -211,9 +246,26 @@ function toSpec(kind: AiChartKind, output: unknown): unknown {
       })),
     };
   }
+  if (kind === "flowchart") {
+    const o = output as z.infer<typeof flowchartOutput>;
+    const lanes = [...new Set(o.lanes.map((l) => l.trim().slice(0, 100)).filter(Boolean))].slice(0, 30);
+    return {
+      type: "flowchart",
+      title: o.title,
+      direction: o.direction,
+      ...(lanes.length > 0 ? { lanes } : {}),
+      nodes: o.steps.map((s) => ({
+        id: s.id,
+        label: s.label,
+        shape: s.kind,
+        ...(s.lane && lanes.includes(s.lane.trim()) ? { lane: s.lane.trim() } : {}),
+      })),
+      edges: o.links.map(stripNulls),
+    };
+  }
   const o = output as z.infer<typeof flowOutput>;
   return {
-    type: "flowchart",
+    type: "diagram",
     ...stripNulls(o),
     nodes: o.nodes.map(stripNulls),
     edges: o.edges.map(stripNulls),
@@ -229,7 +281,14 @@ export async function generateChart(
   if (!apiKey.trim()) return { ok: false, error: "Add your Anthropic API key first" };
   // The user's own key, used only from their browser: this is the case the SDK option exists for.
   const client = new Anthropic({ apiKey: apiKey.trim(), dangerouslyAllowBrowser: true });
-  const schema = kind === "gantt" ? ganttOutput : kind === "kanban" ? kanbanOutput : flowOutput;
+  const schema =
+    kind === "gantt"
+      ? ganttOutput
+      : kind === "kanban"
+        ? kanbanOutput
+        : kind === "flowchart"
+          ? flowchartOutput
+          : flowOutput;
   try {
     const response = await client.beta.messages.create(
       {

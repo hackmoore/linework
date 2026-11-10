@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { flowchartDataSchema, validateFlowchart } from "./flowchart.js";
 import { ganttDataSchema, validateGantt } from "./gantt.js";
 import { kanbanDataSchema, validateKanban } from "./kanban.js";
 import { migrateDiagram } from "./migrate.js";
@@ -8,10 +9,11 @@ export const DIAGRAM_FORMAT_VERSION = 2;
 
 /**
  * What a document is. Each chart type has its own objects and editor:
- * freeform diagrams use nodes and edges; gantt charts and kanban boards use the `gantt`
- * and `kanban` payloads.
+ * freeform diagrams and flowcharts use nodes and edges (flowcharts add direction and
+ * swimlanes in `flowchart`); gantt charts and kanban boards use the `gantt` and `kanban`
+ * payloads.
  */
-export const CHART_TYPES = ["freeform", "gantt", "kanban"] as const;
+export const CHART_TYPES = ["freeform", "gantt", "kanban", "flowchart"] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
 
 export const SHAPE_KINDS = [
@@ -31,6 +33,10 @@ export const SHAPE_KINDS = [
   "actor",
   /** A library icon (see `icon`) with its label underneath. */
   "icon",
+  /** Flowchart start or end: a pill with fully rounded ends. */
+  "terminal",
+  /** Flowchart subprocess (predefined process): a box with double side edges. */
+  "subroutine",
 ] as const;
 export type ShapeKind = (typeof SHAPE_KINDS)[number];
 
@@ -132,6 +138,7 @@ export const diagramSchema = z
     comments: z.array(commentSchema).max(2_000),
     gantt: ganttDataSchema.optional(),
     kanban: kanbanDataSchema.optional(),
+    flowchart: flowchartDataSchema.optional(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
   })
@@ -171,6 +178,15 @@ export const diagramSchema = z
         ctx.addIssue({ code: "custom", path: ["kanban", ...path], message });
       }
     }
+    if (diagram.chartType === "flowchart") {
+      if (!diagram.flowchart) {
+        ctx.addIssue({ code: "custom", path: ["flowchart"], message: "Flowchart is missing its data" });
+        return;
+      }
+      for (const [path, message] of validateFlowchart(diagram.flowchart)) {
+        ctx.addIssue({ code: "custom", path: ["flowchart", ...path], message });
+      }
+    }
   });
 export type Diagram = z.infer<typeof diagramSchema>;
 
@@ -180,7 +196,7 @@ export interface DiagramSummary {
   readonly title: string;
   readonly styleId: string;
   readonly chartType: ChartType;
-  /** Shapes in a freeform diagram, tasks in a gantt chart, cards on a kanban board. */
+  /** Shapes in a freeform diagram or flowchart, tasks in a gantt chart, cards on a kanban board. */
   readonly itemCount: number;
   readonly updatedAt: string;
 }

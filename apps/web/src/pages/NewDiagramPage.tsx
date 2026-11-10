@@ -99,7 +99,7 @@ function ChartTypePicker(): ReactElement {
         {aiOpen && (
           <Suspense fallback={null}>
             <AiDialog
-              initialKind={selected === "freeform" ? "flowchart" : selected}
+              initialKind={selected === "freeform" ? "diagram" : selected}
               onClose={() => {
                 setAiOpen(false);
               }}

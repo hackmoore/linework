@@ -8,7 +8,8 @@ import { useUi } from "./ui";
 const timeFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
 
 function targetName(diagram: Diagram, comment: DiagramComment): string {
-  if (!comment.targetId) return diagram.chartType === "freeform" ? "Canvas" : "Whole chart";
+  if (!comment.targetId)
+    return diagram.chartType === "freeform" || diagram.chartType === "flowchart" ? "Canvas" : "Whole chart";
   const node = diagram.nodes.find((n) => n.id === comment.targetId);
   if (node) return (node.label.split("\n")[0] ?? "") || "Shape";
   const task = diagram.gantt?.tasks.find((t) => t.id === comment.targetId);
