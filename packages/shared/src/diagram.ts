@@ -30,6 +30,7 @@ export const CHART_TYPES = [
   "org",
   "mindmap",
   "class",
+  "state",
 ] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
 

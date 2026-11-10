@@ -5,6 +5,7 @@ import { classUi } from "../classes/ClassPanel";
 import { erUi } from "../er/ErPanel";
 import { mindmapUi } from "../mindmap/MindmapPanel";
 import { orgUi } from "../org/OrgPanel";
+import { stateUi } from "../statemachine/StatePanel";
 import type { ToolDef } from "../editor/tools";
 
 export interface SelectionPanelProps {
@@ -33,6 +34,7 @@ const UIS: Partial<Record<ChartType, KindUi>> = {
   org: orgUi,
   mindmap: mindmapUi,
   class: classUi,
+  state: stateUi,
 };
 
 export function kindUi(chartType: ChartType | undefined): KindUi | undefined {

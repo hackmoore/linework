@@ -5,6 +5,7 @@ import { classAi } from "../classes/ai";
 import { erAi } from "../er/ai";
 import { mindmapAi } from "../mindmap/ai";
 import { orgAi } from "../org/ai";
+import { stateAi } from "../statemachine/ai";
 
 /**
  * How "Generate with AI" handles a node-and-edge chart type: the structured output Claude
@@ -24,4 +25,5 @@ export const KIND_AI: Partial<Record<ChartType, KindAi>> = {
   org: orgAi,
   mindmap: mindmapAi,
   class: classAi,
+  state: stateAi,
 };

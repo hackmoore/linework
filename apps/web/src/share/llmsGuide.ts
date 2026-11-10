@@ -353,6 +353,30 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
   Optional: \`fromMultiplicity\`, \`toMultiplicity\`, \`label\`.
 - Mermaid \`classDiagram\` text also imports as a class diagram.
 
+### State machine (lifecycle, states and events, UML state diagram)
+
+    {
+      "type": "state",
+      "states": [
+        { "name": "Idle" },
+        { "name": "Running", "entry": "start motor" },
+        { "name": "check", "kind": "choice" }
+      ],
+      "transitions": [
+        { "from": "[*]", "to": "Idle" },
+        { "from": "Idle", "to": "Running", "event": "start" },
+        { "from": "Running", "to": "check", "event": "stop" },
+        { "from": "check", "to": "Idle", "guard": "safe" },
+        { "from": "check", "to": "[*]", "guard": "shutdown" }
+      ]
+    }
+
+- States need a unique \`name\`. \`kind\`: state (default), choice or composite. Optional:
+  \`parent\` (the composite state it's inside), \`entry\`, \`do\`, \`exit\` (actions).
+- Transitions: \`from\` and \`to\` are state names, or "[*]" for the start and the end.
+  Optional: \`event\`, \`guard\`, \`action\`. Put a guard on every branch out of a choice.
+- Mermaid \`stateDiagram-v2\` text also imports as a state machine.
+
 ## Rules
 
 1. Give the user the full link as a clickable link. Don't show the encoded payload separately.

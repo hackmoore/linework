@@ -279,6 +279,18 @@ export function edgePoints(
 ): Point[] {
   source = attachBox(source);
   target = attachBox(target);
+  if (source.id === target.id) {
+    // A connector from a shape to itself loops out of its top right corner and back.
+    const { x, y, width: w, height: h } = source;
+    const out = Math.min(32, Math.max(18, h / 2));
+    return [
+      { x: x + w * 0.7, y },
+      { x: x + w * 0.7, y: y - out },
+      { x: x + w + out, y: y - out },
+      { x: x + w + out, y: y + h * 0.3 },
+      { x: x + w, y: y + h * 0.3 },
+    ];
+  }
   const sc = center(source);
   const tc = center(target);
   if (edge.routing === "elbow" && flow) {
@@ -290,6 +302,19 @@ export function edgePoints(
   if (edge.routing === "elbow") {
     const dx = tc.x - sc.x;
     const dy = tc.y - sc.y;
+    // Branches leave a decision from its side corners when they head off to one side.
+    // Branches heading off to one side of a decision leave from its side corner and turn
+    // once, down (or up) into the target.
+    if (!axis && source.kind === "diamond" && flow === "TB" && Math.abs(dx) > source.width / 2 + 20) {
+      const sx = sc.x + Math.sign(dx) * (source.width / 2);
+      const ty = dy >= 0 ? target.y : target.y + target.height;
+      if (Math.abs(ty - sc.y) > 12)
+        return [
+          { x: sx, y: sc.y },
+          { x: tc.x, y: sc.y },
+          { x: tc.x, y: ty },
+        ];
+    }
     if (axis ? axis === "LR" : Math.abs(dx) >= Math.abs(dy)) {
       const sx = sc.x + Math.sign(dx) * (source.width / 2);
       const tx = tc.x - Math.sign(dx) * (target.width / 2);

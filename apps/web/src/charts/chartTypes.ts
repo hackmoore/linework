@@ -314,6 +314,40 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["class", "classes"],
   },
+  state: {
+    id: "state",
+    name: "State machine",
+    tagline: "Show the states something can be in and the events that move it between them.",
+    bestFor: ["Order, ticket and document lifecycles", "Device and UI behaviour", "Protocols and workflows"],
+    objects: [
+      { name: "Initial state", description: "The filled dot where the machine starts." },
+      {
+        name: "State",
+        description: "A situation that lasts, like Idle or Paid, with optional entry, do and exit actions.",
+      },
+      {
+        name: "Transition",
+        description:
+          "An arrow labelled “event [guard] / action”: what triggers the change, when, and what happens.",
+      },
+      {
+        name: "Choice",
+        description: "A diamond where the next state depends on guards, such as [card accepted].",
+      },
+      {
+        name: "Composite state",
+        description: "A state with its own states inside, sharing transitions out.",
+      },
+      { name: "Final state", description: "The ringed dot where the machine ends." },
+    ],
+    tips: [
+      "Select a state and press Tab to add the next one, already connected.",
+      "Edit a transition's event, guard and action in the panel, or double-click it and type “event [guard] / action”.",
+      "Checks lists states that can't be reached, states with no way out and choices without guards.",
+      "Paste Mermaid stateDiagram text in My diagrams to import it, and export back to Mermaid.",
+    ],
+    item: ["state", "states"],
+  },
   freeform: {
     id: "freeform",
     name: "Freeform diagram",
@@ -347,6 +381,7 @@ export const CHART_TYPE_ORDER: readonly ChartType[] = [
   "org",
   "mindmap",
   "class",
+  "state",
   "freeform",
 ];
 

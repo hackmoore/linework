@@ -529,7 +529,7 @@ export function Canvas(): ReactElement | null {
                       edge,
                       s,
                       t,
-                      flowDirection(diagram),
+                      flowDirection(diagram) ?? kindModel(diagram.chartType)?.loopFlow?.(diagram),
                       kindModel(diagram.chartType)?.elbowAxis?.(diagram),
                     ),
                   )}
@@ -684,7 +684,7 @@ function EdgeTextEditor({ edgeId }: { edgeId: string }): ReactElement | null {
       edge,
       source,
       target,
-      diagram ? flowDirection(diagram) : undefined,
+      diagram ? (flowDirection(diagram) ?? kindModel(diagram.chartType)?.loopFlow?.(diagram)) : undefined,
       diagram ? kindModel(diagram.chartType)?.elbowAxis?.(diagram) : undefined,
     ),
   );

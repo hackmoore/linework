@@ -4,9 +4,44 @@ import type { Diagram } from "@linework/shared";
 import { chartDrawing } from "../charts/ChartSvg";
 import { DiagramContent, visibleNodesInOrder } from "../render/DiagramSvg";
 import { embeddedFontCss } from "./fonts";
-import { contentBounds } from "../flowchart/model";
+import { contentBounds, flowDirection } from "../flowchart/model";
+import { kindModel } from "../kinds/registry";
+import { boundsOf, edgeMidpoint, edgePoints, type Rect } from "../render/geometry";
 
 const EXPORT_PADDING = 32;
+
+/**
+ * Everything the drawing covers: shapes and lanes, plus connectors that loop outside them,
+ * connector labels, and labels drawn under small shapes.
+ */
+function drawingBounds(diagram: Diagram): Rect | null {
+  const nodes = visibleNodesInOrder(diagram);
+  const base = contentBounds(diagram, nodes);
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const kind = kindModel(diagram.chartType);
+  const flow = flowDirection(diagram) ?? kind?.loopFlow?.(diagram);
+  const axis = kind?.elbowAxis?.(diagram);
+  const extra: Rect[] = [];
+  for (const e of diagram.edges) {
+    const s = byId.get(e.source);
+    const t = byId.get(e.target);
+    if (!s || !t) continue;
+    const points = edgePoints(e, s, t, flow, axis);
+    for (const p of points) extra.push({ x: p.x - 4, y: p.y - 4, width: 8, height: 8 });
+    if (e.label) {
+      const mid = edgeMidpoint(e.routing, points);
+      const lines = e.label.split("\n");
+      const w = Math.max(...lines.map((l) => l.length)) * 14 * 0.56 + 12;
+      const h = lines.length * 14 * 1.3 + 6;
+      extra.push({ x: mid.x - w / 2, y: mid.y - h / 2, width: w, height: h });
+    }
+  }
+  for (const n of nodes) {
+    if (n.label && (n.kind === "initial" || n.kind === "final" || n.kind === "actor"))
+      extra.push({ x: n.x + n.width / 2 - 80, y: n.y, width: 160, height: n.height + n.fontSize * 1.3 + 8 });
+  }
+  return boundsOf([...(base ? [base] : []), ...extra]);
+}
 
 export interface SvgOptions {
   /** CSS placed in the SVG, typically @font-face rules with embedded fonts. */
@@ -39,7 +74,7 @@ export function diagramToSvg(
     );
     return { svg: `<?xml version="1.0" encoding="UTF-8"?>\n${markup}`, width, height };
   }
-  const bounds = contentBounds(diagram, visibleNodesInOrder(diagram)) ?? {
+  const bounds = drawingBounds(diagram) ?? {
     x: 0,
     y: 0,
     width: 200,

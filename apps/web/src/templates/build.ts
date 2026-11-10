@@ -14,6 +14,7 @@ import { classTemplate } from "../classes/templates";
 import { erTemplate } from "../er/templates";
 import { mindmapTemplate } from "../mindmap/templates";
 import { orgTemplate } from "../org/templates";
+import { stateTemplate } from "../statemachine/templates";
 import { createDiagram, createEdge, createNode } from "../diagram/factory";
 import type { StyleId } from "../diagram/styles";
 import {
@@ -205,6 +206,9 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
   }
   if (templateId === "network-blank" || templateId === "network-investigation") {
     return networkTemplate(templateId, styleId, info?.name ?? "Network map");
+  }
+  if (templateId === "state" || templateId === "state-blank") {
+    return stateTemplate(styleId, info?.name ?? "State machine", templateId === "state-blank");
   }
   if (templateId === "class" || templateId === "class-blank") {
     return classTemplate(styleId, info?.name ?? "Class diagram", templateId === "class-blank");

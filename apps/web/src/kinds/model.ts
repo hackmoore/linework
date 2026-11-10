@@ -51,6 +51,8 @@ export interface KindModel {
   readonly checks?: (diagram: Diagram) => readonly KindIssue[];
   /** Which way elbow connectors leave their source, such as always down in an org chart. */
   readonly elbowAxis?: (diagram: Diagram) => "TB" | "LR";
+  /** The way the diagram flows, so elbow connectors going back against it loop round the side. */
+  readonly loopFlow?: (diagram: Diagram) => "TB" | "LR";
 }
 
 /** Chart types drawn on the canvas, as opposed to gantt charts, kanban boards and roadmaps. */

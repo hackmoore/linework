@@ -896,7 +896,7 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
   const labelBackground = diagram.background === "transparent" ? "#ffffff" : diagram.background;
   const lanes = useMemo(() => laneBands(diagram), [diagram]);
   const vertical = diagram.flowchart?.direction !== "LR";
-  const flow = flowDirection(diagram);
+  const flow = flowDirection(diagram) ?? kindModel(diagram.chartType)?.loopFlow?.(diagram);
   const axis = kindModel(diagram.chartType)?.elbowAxis?.(diagram);
   return (
     <g fontFamily={style.fontFamily}>

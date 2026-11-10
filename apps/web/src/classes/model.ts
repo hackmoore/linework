@@ -302,9 +302,7 @@ export function importMermaidClasses(text: string, title: string): KindImportRes
 }
 
 /** One Mermaid relationship line, turned the way Linework draws that relation. */
-function parseRelation(
-  line: string,
-): {
+function parseRelation(line: string): {
   from: string;
   to: string;
   relation: Relation;
