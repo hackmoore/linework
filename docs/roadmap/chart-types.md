@@ -4,7 +4,7 @@ Each chart type is a structured document with its own objects, editor and guidan
 (see `apps/web/src/charts/chartTypes.ts`). Freeform diagrams remain available for
 anything that does not fit a type.
 
-Status: **Gantt**, **Roadmap**, **Kanban**, **Flowchart**, **Network map**, **Architecture (C4)**, **Entity-relationship**, **Org chart** and **Freeform** are implemented. The rest are candidates, ranked by
+Status: **Gantt**, **Roadmap**, **Kanban**, **Flowchart**, **Network map**, **Architecture (C4)**, **Entity-relationship**, **Org chart**, **Mind map** and **Freeform** are implemented. The rest are candidates, ranked by
 fit with Linework's focus on project management and software design.
 
 | Priority | Chart                        | Objects                                                  | Why                                                   |
@@ -19,7 +19,7 @@ fit with Linework's focus on project management and software design.
 | Done     | Architecture / C4            | People, systems, containers, components, boundaries      | Shipped; exports Mermaid C4                           |
 | Done     | Entity-relationship          | Tables, columns, keys, crow's-foot relations             | Shipped; imports and exports SQL                      |
 | Done     | Org / team chart             | People, roles, departments, reporting lines, tree layout | Shipped; imports and exports CSV                      |
-| 8        | Mind map                     | Central topic, branches, automatic layout                | Fast brainstorming                                    |
+| Done     | Mind map                     | Central topic, branches, automatic layout                | Shipped; imports Markdown outlines and Mermaid        |
 | 9        | Class diagram (UML)          | Classes, members, inheritance, composition               | Engineering audience                                  |
 | 10       | State machine                | States, transitions, start/end, nested states            | Pairs with sequence diagrams                          |
 | 11       | User journey / story map     | Stages, steps, emotions, owners                          | Product teams                                         |
