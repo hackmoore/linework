@@ -318,8 +318,25 @@ function ZoomControls({
   getCanvasSize: () => { width: number; height: number };
 }): ReactElement {
   const zoom = useEditor((s) => s.viewport.zoom);
+  const showGrid = useUi((s) => s.showGrid);
   return (
     <div className="zoom-controls" role="group" aria-label="Zoom">
+      <button
+        type="button"
+        className={`btn btn--ghost btn--sm zoom-controls__grid${showGrid ? " zoom-controls__grid--on" : ""}`}
+        aria-pressed={showGrid}
+        aria-label="Show dot grid"
+        title={showGrid ? "Hide the dot grid" : "Show the dot grid"}
+        onClick={() => {
+          useUi.getState().setShowGrid(!showGrid);
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="currentColor">
+          {[3, 8, 13].flatMap((y) =>
+            [3, 8, 13].map((x) => <circle key={`${String(x)}-${String(y)}`} cx={x} cy={y} r={1.4} />),
+          )}
+        </svg>
+      </button>
       <button
         type="button"
         className="btn btn--ghost btn--sm"

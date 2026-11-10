@@ -1033,3 +1033,12 @@
   text-decoration: underline dotted;
   cursor: pointer;
 }
+.zoom-controls__grid {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-muted);
+  opacity: 0.55;
+}
+.zoom-controls__grid--on {
+  opacity: 1;
+}

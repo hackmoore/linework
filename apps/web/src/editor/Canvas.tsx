@@ -65,6 +65,7 @@ function isInside(inner: Rect, outer: Rect): boolean {
 export function Canvas(): ReactElement | null {
   const diagram = useEditor((s) => s.diagram);
   const viewport = useEditor((s) => s.viewport);
+  const showGrid = useUi((s) => s.showGrid);
   const selection = useEditor((s) => s.selection);
   const tool = useEditor((s) => s.tool);
   const editingNodeId = useEditor((s) => s.editingNodeId);
@@ -510,7 +511,9 @@ export function Canvas(): ReactElement | null {
             height="100000"
             fill={diagram.background === "transparent" ? "transparent" : diagram.background}
           />
-          <rect x={viewport.x} y={viewport.y} width="100000" height="100000" fill="url(#canvas-grid)" />
+          {showGrid && (
+            <rect x={viewport.x} y={viewport.y} width="100000" height="100000" fill="url(#canvas-grid)" />
+          )}
           <DiagramContent diagram={diagram} editingNodeId={editingNodeId} />
 
           {diagram.edges
