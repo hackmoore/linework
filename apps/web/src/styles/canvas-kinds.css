@@ -1,0 +1,86 @@
+/* Inspector panels for the node-and-edge chart types (architecture, ER, org, mind map, class, state). */
+
+/* Entity-relationship: column editor. */
+.er-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+.er-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.er-column__fields {
+  display: flex;
+  gap: 0.3rem;
+}
+.er-column__name {
+  flex: 3;
+  min-width: 0;
+}
+.er-column__type {
+  flex: 2;
+  min-width: 0;
+}
+.er-column__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.er-flag {
+  padding: 0.05rem 0.35rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.er-flag--on {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.er-flag + .icon-btn {
+  margin-left: auto;
+}
+
+/* Lists of people or members with a small action, used by org charts and class diagrams. */
+.kind-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0;
+  list-style: none;
+}
+.kind-list__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.25rem 0.4rem;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.kind-list__item:hover {
+  background: var(--color-accent-soft);
+}
+.kind-list__meta {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+}

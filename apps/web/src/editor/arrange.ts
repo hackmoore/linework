@@ -121,6 +121,11 @@ export function layeredLayout(
   edges: readonly Pick<DiagramEdge, "source" | "target">[],
   direction: LayoutDirection = "TB",
   gap = { rank: 80, node: 48 },
+  /**
+   * Moves shapes that only lead somewhere later down to the rank just before the first thing
+   * they lead to, so connectors don't stretch across ranks and through other shapes.
+   */
+  compact = false,
 ): Map<string, { x: number; y: number }> {
   const out = new Map<string, { x: number; y: number }>();
   if (nodes.length === 0) return out;
@@ -163,6 +168,17 @@ export function layeredLayout(
     return r;
   };
   for (const n of nodes) rankOf(n.id);
+  if (compact) {
+    // Repeat from the last rank back, so chains of such shapes all move.
+    const byRank = [...nodes].sort((a, b) => (rank.get(b.id) ?? 0) - (rank.get(a.id) ?? 0));
+    for (const n of byRank) {
+      const next = (outgoing.get(n.id) ?? []).filter((t) => !backEdges.has(`${n.id}\u0000${t}`));
+      // Only when it shortens more connectors than it stretches.
+      if (next.length === 0 || next.length < (incoming.get(n.id) ?? []).length) continue;
+      const limit = Math.min(...next.map((t) => rank.get(t) ?? 0)) - 1;
+      if (limit > (rank.get(n.id) ?? 0)) rank.set(n.id, limit);
+    }
+  }
 
   const rankCount = Math.max(...rank.values()) + 1;
   const layers: string[][] = Array.from({ length: rankCount }, () => []);

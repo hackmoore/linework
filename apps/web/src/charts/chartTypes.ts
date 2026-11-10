@@ -213,6 +213,36 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["element", "elements"],
   },
+  er: {
+    id: "er",
+    name: "Entity-relationship diagram",
+    tagline: "Design a database: tables, their columns and keys, and how they relate.",
+    bestFor: ["Database schema design", "Documenting an existing database", "Data model reviews"],
+    objects: [
+      { name: "Table", description: "An entity, with a name and a list of columns." },
+      {
+        name: "Column",
+        description:
+          "A name and a type, flagged PK (primary key), FK (foreign key), UQ (unique) or NN (not null).",
+      },
+      {
+        name: "Relationship",
+        description: "A line from a parent table to a child table that holds a foreign key to it.",
+      },
+      {
+        name: "Cardinality",
+        description: "The crow's foot ends: exactly one, zero or one, one or many, or zero or many.",
+      },
+    ],
+    tips: [
+      "Pick Table from the toolbar, then edit its columns in the panel or double-click it and type one column per line.",
+      "Select a table and press Tab to add a related table with a foreign key to it.",
+      "Draw a relationship from the parent table to the child. It starts as one to zero or many; change either end in the panel.",
+      "Import CREATE TABLE statements from a .sql file in My diagrams. Foreign keys become relationships.",
+      "Export as SQL or as a Mermaid ER diagram.",
+    ],
+    item: ["table", "tables"],
+  },
   freeform: {
     id: "freeform",
     name: "Freeform diagram",
@@ -242,6 +272,7 @@ export const CHART_TYPE_ORDER: readonly ChartType[] = [
   "flowchart",
   "network",
   "architecture",
+  "er",
   "freeform",
 ];
 

@@ -26,6 +26,7 @@ export const CHART_TYPES = [
   "network",
   "roadmap",
   "architecture",
+  "er",
 ] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
 

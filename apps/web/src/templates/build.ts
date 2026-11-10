@@ -10,6 +10,7 @@ import type {
   ShapeKind,
 } from "@linework/shared";
 import { architectureTemplate } from "../architecture/templates";
+import { erTemplate } from "../er/templates";
 import { createDiagram, createEdge, createNode } from "../diagram/factory";
 import type { StyleId } from "../diagram/styles";
 import {
@@ -227,6 +228,9 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
   }
   if (templateId === "network-blank" || templateId === "network-investigation") {
     return networkTemplate(templateId, styleId, info?.name ?? "Network map");
+  }
+  if (templateId === "er" || templateId === "er-blank") {
+    return erTemplate(styleId, info?.name ?? "Database", templateId === "er-blank");
   }
   if (templateId === "architecture" || templateId === "architecture-blank") {
     return architectureTemplate(

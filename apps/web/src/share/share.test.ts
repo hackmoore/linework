@@ -145,7 +145,7 @@ describe("LLM guide", () => {
   it("has JSON examples that import", () => {
     // Indented code blocks starting with "{" are the JSON examples.
     const blocks = guide.split("\n\n").filter((b) => b.startsWith("    {"));
-    expect(blocks).toHaveLength(7);
+    expect(blocks).toHaveLength(8);
     for (const block of blocks) {
       const result = parseSimpleSpec(JSON.parse(block));
       if (!result.ok) throw new Error(result.error);

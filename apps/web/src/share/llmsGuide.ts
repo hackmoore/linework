@@ -274,6 +274,27 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
 - Relationships: \`from\`, \`to\`, \`label\` (what happens), \`technology\` (such as JSON/HTTPS).
 - \`direction\`: TB (default) or LR.
 
+### Entity-relationship diagram (database schema, data model)
+
+    {
+      "type": "er",
+      "title": "Shop",
+      "tables": [
+        { "name": "customers", "columns": ["id uuid PK", "email text UQ NN"] },
+        { "name": "orders", "columns": ["id uuid PK", "customer_id uuid FK NN", "total numeric(10,2)"] }
+      ],
+      "relationships": [
+        { "from": "customers", "to": "orders", "label": "places" }
+      ]
+    }
+
+- Tables need a unique \`name\`. \`columns\`: one string each, "name type FLAGS", with flags
+  PK (primary key), FK (foreign key), UQ (unique) and NN (not null).
+- Relationships go \`from\` the parent table \`to\` the child table that holds the foreign key.
+  \`fromCardinality\` (default one) and \`toCardinality\` (default zero-or-many): one,
+  zero-or-one, one-or-many or zero-or-many. \`label\`: a verb.
+- \`direction\`: LR (default) or TB.
+
 ## Rules
 
 1. Give the user the full link as a clickable link. Don't show the encoded payload separately.

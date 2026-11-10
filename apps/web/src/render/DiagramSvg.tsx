@@ -646,6 +646,8 @@ interface EdgeViewProps {
   readonly labelBackground: string;
   /** Flowchart direction, for routing loops; undefined for other diagrams. */
   readonly flow: FlowDirection | undefined;
+  /** Lines go under shapes; labels are drawn again on top so shapes never hide them. */
+  readonly layer: "line" | "label";
 }
 
 /** Text beside one end of a connector, such as a multiplicity, offset to one side of the line. */
@@ -692,6 +694,7 @@ const EdgeView = memo(function EdgeView({
   style,
   labelBackground,
   flow,
+  layer,
 }: EdgeViewProps): ReactElement {
   const points = edgePoints(edge, source, target, flow);
   const d = edgePath(edge.routing, points);
@@ -722,21 +725,28 @@ const EdgeView = memo(function EdgeView({
   const fontSize = 14;
   const labelWidth = Math.max(...labelLines.map((l) => l.length), 0) * fontSize * 0.56 + 12;
   const labelHeight = labelLines.length * fontSize * LINE_HEIGHT + 6;
+  if (layer === "line") {
+    return (
+      <g data-edge-id={edge.id}>
+        {/* Wide transparent stroke makes thin edges easy to click. */}
+        <path d={d} fill="none" stroke="transparent" strokeWidth={Math.max(12, edge.strokeWidth + 10)} />
+        <StrokedPath
+          d={d}
+          fill="transparent"
+          stroke={edge.stroke}
+          strokeWidth={edge.strokeWidth}
+          pattern={edge.strokePattern}
+          sketchy={style.sketchy}
+          roughness={style.roughness}
+          seedKey={edge.id}
+        />
+        {heads}
+      </g>
+    );
+  }
+  if (labelLines.length === 0 && !edge.startLabel && !edge.endLabel) return <g />;
   return (
     <g data-edge-id={edge.id}>
-      {/* Wide transparent stroke makes thin edges easy to click. */}
-      <path d={d} fill="none" stroke="transparent" strokeWidth={Math.max(12, edge.strokeWidth + 10)} />
-      <StrokedPath
-        d={d}
-        fill="transparent"
-        stroke={edge.stroke}
-        strokeWidth={edge.strokeWidth}
-        pattern={edge.strokePattern}
-        sketchy={style.sketchy}
-        roughness={style.roughness}
-        seedKey={edge.id}
-      />
-      {heads}
       {edge.startLabel && first && second && (
         <EndLabel
           text={edge.startLabel}
@@ -905,6 +915,7 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
             style={style}
             labelBackground={labelBackground}
             flow={flow}
+            layer="line"
           />
         );
       })}
@@ -917,6 +928,23 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
           halo={labelBackground}
         />
       ))}
+      {diagram.edges.map((edge) => {
+        const source = nodesById.get(edge.source);
+        const target = nodesById.get(edge.target);
+        if (!source || !target) return null;
+        return (
+          <EdgeView
+            key={`${edge.id}-label`}
+            edge={edge}
+            source={source}
+            target={target}
+            style={style}
+            labelBackground={labelBackground}
+            flow={flow}
+            layer="label"
+          />
+        );
+      })}
     </g>
   );
 }

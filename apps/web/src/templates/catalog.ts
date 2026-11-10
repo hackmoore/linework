@@ -16,6 +16,8 @@ export const TEMPLATE_IDS = [
   "network-investigation",
   "roadmap-blank",
   "architecture-blank",
+  "er",
+  "er-blank",
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -119,6 +121,22 @@ export const TEMPLATE_CATALOG: readonly TemplateInfo[] = [
     description: "A C4 container diagram: an online shop's apps, services and database, and who uses them.",
     category: "Software design",
     blank: false,
+  },
+  {
+    id: "er",
+    chartType: "er",
+    name: "Online shop database",
+    description: "Customers, addresses, orders and products, with keys and crow's foot relationships.",
+    category: "Software design",
+    blank: false,
+  },
+  {
+    id: "er-blank",
+    chartType: "er",
+    name: "Blank entity-relationship diagram",
+    description: "An empty schema, ready for tables.",
+    category: "Software design",
+    blank: true,
   },
   {
     id: "architecture-blank",

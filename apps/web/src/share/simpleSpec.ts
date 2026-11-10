@@ -36,6 +36,7 @@ import {
 } from "../roadmap/model";
 import { createFlowchartData, createFlowLane, DEFAULT_LANE_SIZE, flowNodeStyle } from "../flowchart/model";
 import { architectureSpecSchema, buildArchitecture } from "../architecture/spec";
+import { buildEr, erSpecSchema } from "../er/spec";
 import { ICONS } from "../library/icons";
 import { boundsOf } from "../render/geometry";
 
@@ -250,6 +251,7 @@ const specSchema = z.discriminatedUnion("type", [
   networkSchema,
   roadmapSchema,
   architectureSpecSchema,
+  erSpecSchema,
 ]);
 export type SimpleSpec = z.input<typeof specSchema>;
 
@@ -270,6 +272,7 @@ export function parseSimpleSpec(input: unknown): SpecResult {
   if (spec.type === "network") return buildNetwork(spec);
   if (spec.type === "roadmap") return { ok: true, diagram: buildRoadmap(spec) };
   if (spec.type === "architecture") return buildArchitecture(spec);
+  if (spec.type === "er") return buildEr(spec);
   return buildFlow(spec);
 }
 

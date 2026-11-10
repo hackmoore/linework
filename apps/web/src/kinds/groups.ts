@@ -128,7 +128,7 @@ export function clusteredLayout(
       const target = childContaining(groupId, e.target);
       return source && target && source !== target ? [{ source, target }] : [];
     });
-    const placed = layeredLayout(proxies, edges, direction, gap);
+    const placed = layeredLayout(proxies, edges, direction, gap, true);
     const boxes = proxies.map((p) => ({ ...p, ...(placed.get(p.id) ?? p) }));
     const bounds = boundsOf(boxes) ?? { x: 0, y: 0, width: 0, height: 0 };
     for (const b of boxes) {
