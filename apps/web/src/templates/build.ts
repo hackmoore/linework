@@ -10,6 +10,7 @@ import type {
   ShapeKind,
 } from "@linework/shared";
 import { architectureTemplate } from "../architecture/templates";
+import { classTemplate } from "../classes/templates";
 import { erTemplate } from "../er/templates";
 import { mindmapTemplate } from "../mindmap/templates";
 import { orgTemplate } from "../org/templates";
@@ -204,6 +205,9 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
   }
   if (templateId === "network-blank" || templateId === "network-investigation") {
     return networkTemplate(templateId, styleId, info?.name ?? "Network map");
+  }
+  if (templateId === "class" || templateId === "class-blank") {
+    return classTemplate(styleId, info?.name ?? "Class diagram", templateId === "class-blank");
   }
   if (templateId === "mindmap" || templateId === "mindmap-blank") {
     return mindmapTemplate(styleId, info?.name ?? "Mind map", templateId === "mindmap-blank");

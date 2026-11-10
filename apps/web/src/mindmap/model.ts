@@ -165,7 +165,8 @@ export function normalizeMindmap(diagram: Diagram): Diagram {
       arrowStart: "none" as const,
     };
   });
-  const changed = nodes.some((n, i) => n !== diagram.nodes[i]) || edges.some((e, i) => e !== diagram.edges[i]);
+  const changed =
+    nodes.some((n, i) => n !== diagram.nodes[i]) || edges.some((e, i) => e !== diagram.edges[i]);
   return changed ? { ...diagram, nodes, edges } : diagram;
 }
 
@@ -336,7 +337,10 @@ export function parseOutline(text: string): { root: string; branches: OutlineTop
   const mermaid = /^\s*mindmap\s*$/.test(raw[0] ?? "");
   const lines = (mermaid ? raw.slice(1) : raw).filter((l) => !/^\s*::icon\(/.test(l));
   let root = "";
-  interface Item { indent: number; text: string }
+  interface Item {
+    indent: number;
+    text: string;
+  }
   const items: Item[] = [];
   for (const line of lines) {
     const heading = /^#+\s+(.*)$/.exec(line.trim());
@@ -363,7 +367,10 @@ export function parseOutline(text: string): { root: string; branches: OutlineTop
     // Everything else hangs off the first line, so measure indentation from just below it.
   }
   if (items.length === 0 && !root) return null;
-  interface Node { text: string; children: Node[] }
+  interface Node {
+    text: string;
+    children: Node[];
+  }
   const top: Node[] = [];
   const stack: { indent: number; node: Node }[] = [];
   for (const item of items) {

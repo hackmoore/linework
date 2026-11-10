@@ -282,6 +282,38 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["topic", "topics"],
   },
+  class: {
+    id: "class",
+    name: "Class diagram",
+    tagline: "Model code with UML: classes, their attributes and operations, and how they relate.",
+    bestFor: ["Domain models", "Designing and documenting code", "Explaining a design in a review"],
+    objects: [
+      {
+        name: "Class",
+        description:
+          "A name with attributes and operations. Can also be an interface, abstract class or enumeration.",
+      },
+      { name: "Inheritance", description: "A hollow triangle pointing from a class to its parent." },
+      {
+        name: "Realisation",
+        description: "A dashed line with a hollow triangle, from a class to an interface it implements.",
+      },
+      { name: "Composition", description: "A filled diamond on the whole: parts can't exist without it." },
+      { name: "Aggregation", description: "A hollow diamond on the whole: parts can exist on their own." },
+      {
+        name: "Association",
+        description: "A line between related classes, with multiplicities such as 1 and 0..*.",
+      },
+      { name: "Dependency", description: "A dashed arrow: one class uses another." },
+    ],
+    tips: [
+      "Pick Class from the toolbar, then type attributes and operations in the panel, one per line.",
+      "Select a class and press Tab to add a subclass, already connected.",
+      "Connect two classes, then choose the relationship type and multiplicities in the panel.",
+      "Paste Mermaid classDiagram text in My diagrams to import it, and export back to Mermaid.",
+    ],
+    item: ["class", "classes"],
+  },
   freeform: {
     id: "freeform",
     name: "Freeform diagram",
@@ -314,6 +346,7 @@ export const CHART_TYPE_ORDER: readonly ChartType[] = [
   "er",
   "org",
   "mindmap",
+  "class",
   "freeform",
 ];
 

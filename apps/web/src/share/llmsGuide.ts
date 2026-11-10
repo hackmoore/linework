@@ -330,6 +330,29 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
 - \`layout\`: balanced (default, branches on both sides) or right.
 - Mermaid \`mindmap\` text and Markdown bulleted lists also import as mind maps.
 
+### Class diagram (UML, domain model, object design)
+
+    {
+      "type": "class",
+      "classes": [
+        { "name": "Order", "attributes": ["- id: UUID"], "operations": ["+ total(): Money"] },
+        { "name": "OrderLine", "attributes": ["- quantity: int"] },
+        { "name": "PaymentMethod", "stereotype": "interface", "operations": ["+ charge(amount: Money)"] },
+        { "name": "CardPayment" }
+      ],
+      "relationships": [
+        { "from": "Order", "to": "OrderLine", "type": "composition", "toMultiplicity": "1..*" },
+        { "from": "CardPayment", "to": "PaymentMethod", "type": "realization" }
+      ]
+    }
+
+- Classes need a unique \`name\`. Optional: \`stereotype\` (interface, abstract, enumeration),
+  \`attributes\` and \`operations\` (strings, with + - # ~ for visibility).
+- Relationship \`type\`: association (default), inheritance (from child to parent), realization
+  (from class to interface), composition or aggregation (from whole to part), dependency.
+  Optional: \`fromMultiplicity\`, \`toMultiplicity\`, \`label\`.
+- Mermaid \`classDiagram\` text also imports as a class diagram.
+
 ## Rules
 
 1. Give the user the full link as a clickable link. Don't show the encoded payload separately.

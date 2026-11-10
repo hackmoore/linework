@@ -16,7 +16,10 @@ const output = z.object({
   ),
 });
 
-interface Topic { text: string; children: Topic[] }
+interface Topic {
+  text: string;
+  children: Topic[];
+}
 
 export const mindmapAi: KindAi = {
   label: "Mind map",

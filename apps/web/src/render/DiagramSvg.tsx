@@ -659,12 +659,15 @@ function EndLabel({
   from,
   color,
   background,
+  head,
 }: {
   text: string;
   tip: Point;
   from: Point;
   color: string;
   background: string;
+  /** The arrowhead at this end; labels move out past big ones. */
+  head: Arrowhead;
 }): ReactElement {
   const len = Math.hypot(tip.x - from.x, tip.y - from.y) || 1;
   const ux = (from.x - tip.x) / len;
@@ -676,8 +679,9 @@ function EndLabel({
     nx = -nx;
     ny = -ny;
   }
-  const x = tip.x + ux * 24 + nx * 12;
-  const y = tip.y + uy * 24 + ny * 12;
+  const along = head === "none" || head === "arrow" ? 22 : 36;
+  const x = tip.x + ux * along + nx * 12;
+  const y = tip.y + uy * along + ny * 12;
   const width = text.length * 12 * 0.56 + 6;
   return (
     <g>
@@ -757,6 +761,7 @@ const EdgeView = memo(function EdgeView({
           from={second}
           color={edge.stroke}
           background={labelBackground}
+          head={edge.arrowStart}
         />
       )}
       {edge.endLabel && last && beforeLast && (
@@ -766,6 +771,7 @@ const EdgeView = memo(function EdgeView({
           from={beforeLast}
           color={edge.stroke}
           background={labelBackground}
+          head={edge.arrowEnd}
         />
       )}
       {labelLines.length > 0 && (

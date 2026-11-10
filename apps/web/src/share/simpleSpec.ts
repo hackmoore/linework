@@ -36,6 +36,7 @@ import {
 } from "../roadmap/model";
 import { createFlowchartData, createFlowLane, DEFAULT_LANE_SIZE, flowNodeStyle } from "../flowchart/model";
 import { architectureSpecSchema, buildArchitecture } from "../architecture/spec";
+import { buildClasses, classSpecSchema } from "../classes/spec";
 import { buildEr, erSpecSchema } from "../er/spec";
 import { ICONS } from "../library/icons";
 import { buildMindmapSpec, mindmapSpecSchema } from "../mindmap/spec";
@@ -256,6 +257,7 @@ const specSchema = z.discriminatedUnion("type", [
   erSpecSchema,
   orgSpecSchema,
   mindmapSpecSchema,
+  classSpecSchema,
 ]);
 export type SimpleSpec = z.input<typeof specSchema>;
 
@@ -279,6 +281,7 @@ export function parseSimpleSpec(input: unknown): SpecResult {
   if (spec.type === "er") return buildEr(spec);
   if (spec.type === "org") return buildOrgSpec(spec);
   if (spec.type === "mindmap") return buildMindmapSpec(spec);
+  if (spec.type === "class") return buildClasses(spec);
   return buildFlow(spec);
 }
 

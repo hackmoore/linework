@@ -21,6 +21,8 @@ export const TEMPLATE_IDS = [
   "org-blank",
   "mindmap",
   "mindmap-blank",
+  "class",
+  "class-blank",
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -174,6 +176,23 @@ export const TEMPLATE_CATALOG: readonly TemplateInfo[] = [
       "A small product company: leadership, engineering, design and operations, with an open role.",
     category: "Project management",
     blank: false,
+  },
+  {
+    id: "class",
+    chartType: "class",
+    name: "Order domain model",
+    description:
+      "UML classes for orders, products and payment methods, with an interface and an enumeration.",
+    category: "Software design",
+    blank: false,
+  },
+  {
+    id: "class-blank",
+    chartType: "class",
+    name: "Blank class diagram",
+    description: "An empty UML class diagram.",
+    category: "Software design",
+    blank: true,
   },
   {
     id: "mindmap",
