@@ -8,7 +8,8 @@ import {
   edgePoints,
   normalizeRect,
   pointsToPath,
-  polylineMidpoint,
+  edgeMidpoint,
+  edgePath,
   previewPoints,
   rectContainsPoint,
   type Point,
@@ -521,7 +522,7 @@ export function Canvas(): ReactElement | null {
                 <path
                   key={edge.id}
                   className="canvas__edge-selected"
-                  d={pointsToPath(edgePoints(edge, s, t, flowDirection(diagram)))}
+                  d={edgePath(edge.routing, edgePoints(edge, s, t, flowDirection(diagram)))}
                   strokeWidth={edge.strokeWidth + 6 * strokeScale}
                 />
               );
@@ -667,7 +668,8 @@ function EdgeTextEditor({ edgeId }: { edgeId: string }): ReactElement | null {
   const source = edge && diagram?.nodes.find((n) => n.id === edge.source);
   const target = edge && diagram?.nodes.find((n) => n.id === edge.target);
   if (!edge || !source || !target) return null;
-  const mid = polylineMidpoint(
+  const mid = edgeMidpoint(
+    edge.routing,
     edgePoints(edge, source, target, diagram ? flowDirection(diagram) : undefined),
   );
   const width = 160 * viewport.zoom;

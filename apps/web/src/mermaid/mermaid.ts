@@ -499,6 +499,11 @@ const KIND_SYNTAX: Readonly<Record<ShapeKind, readonly [string, string]>> = {
   icon: ["[", "]"],
   terminal: ["([", "])"],
   subroutine: ["[[", "]]"],
+  table: ["[", "]"],
+  class: ["[", "]"],
+  initial: ["((", "))"],
+  final: ["(((", ")))"],
+  person: ["([", "])"],
 };
 
 function flowchartToMermaid(diagram: Diagram): string {

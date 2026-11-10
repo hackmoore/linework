@@ -36,6 +36,11 @@ const DEFAULT_SIZE: Readonly<Record<ShapeKind, readonly [number, number]>> = {
   icon: [96, 96],
   terminal: [150, 60],
   subroutine: [170, 80],
+  table: [220, 140],
+  class: [220, 150],
+  initial: [32, 32],
+  final: [36, 36],
+  person: [170, 130],
 };
 
 export const DEFAULT_LABEL: Readonly<Record<ShapeKind, string>> = {
@@ -56,6 +61,11 @@ export const DEFAULT_LABEL: Readonly<Record<ShapeKind, string>> = {
   icon: "Icon",
   terminal: "Start",
   subroutine: "Subprocess",
+  table: "table_name\nid uuid PK\nname text",
+  class: "ClassName\n--\n- id: string\n--\n+ save(): void",
+  initial: "",
+  final: "",
+  person: "User",
 };
 
 export function defaultSize(kind: ShapeKind): { width: number; height: number } {
@@ -81,7 +91,14 @@ export function createNode(
     width,
     height,
     label: DEFAULT_LABEL[kind],
-    fill: kind === "note" ? NOTE_FILL : "transparent",
+    fill:
+      kind === "note"
+        ? NOTE_FILL
+        : kind === "initial"
+          ? DEFAULT_STROKE
+          : kind === "table" || kind === "class"
+            ? "#ffffff"
+            : "transparent",
     stroke: kind === "text" ? "#00000000" : DEFAULT_STROKE,
     strokeWidth: kind === "text" ? 0 : kind === "icon" ? 1.8 : 2,
     strokePattern: kind === "container" ? "dashed" : "solid",

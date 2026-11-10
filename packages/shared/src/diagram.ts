@@ -14,7 +14,9 @@ export const DIAGRAM_FORMAT_VERSION = 2;
  * freeform diagrams, flowcharts and network maps use nodes and edges (flowcharts add
  * direction and swimlanes in `flowchart`, network maps add entity and link details in
  * `network`); gantt charts, kanban boards and roadmaps use the `gantt`, `kanban` and `roadmap`
- * payloads.
+ * payloads. Architecture, entity-relationship, org, mind map, class and state diagrams are
+ * nodes and edges too, with the details they need kept on the shapes themselves (`meta`, and
+ * compartments written into table and class labels).
  */
 export const CHART_TYPES = ["freeform", "gantt", "kanban", "flowchart", "network", "roadmap"] as const;
 export type ChartType = (typeof CHART_TYPES)[number];
@@ -40,13 +42,39 @@ export const SHAPE_KINDS = [
   "terminal",
   /** Flowchart subprocess (predefined process): a box with double side edges. */
   "subroutine",
+  /** Database table: the first label line is its name, each further line a column. */
+  "table",
+  /** UML class: label sections (name, attributes, operations) separated by "--" lines. */
+  "class",
+  /** State machine initial state: a filled circle. */
+  "initial",
+  /** State machine final state: a ringed circle. */
+  "final",
+  /** C4 person: a head above a rounded body, with the label in the body. */
+  "person",
 ] as const;
 export type ShapeKind = (typeof SHAPE_KINDS)[number];
 
-export const ARROWHEADS = ["none", "arrow", "triangle", "circle", "diamond"] as const;
+export const ARROWHEADS = [
+  "none",
+  "arrow",
+  "triangle",
+  "circle",
+  "diamond",
+  /** Hollow triangle: UML inheritance and realisation. */
+  "triangle-open",
+  /** Hollow diamond: UML aggregation. */
+  "diamond-open",
+  /** Crow's foot cardinalities for entity-relationship diagrams. */
+  "one",
+  "zero-or-one",
+  "one-or-many",
+  "zero-or-many",
+  "many",
+] as const;
 export type Arrowhead = (typeof ARROWHEADS)[number];
 
-export const EDGE_ROUTINGS = ["straight", "elbow"] as const;
+export const EDGE_ROUTINGS = ["straight", "elbow", "curved"] as const;
 export type EdgeRouting = (typeof EDGE_ROUTINGS)[number];
 
 export const TEXT_ALIGNS = ["left", "center", "right"] as const;
@@ -60,6 +88,16 @@ const hexColor = z.string().regex(/^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/, "Expec
 const fillColor = z.union([hexColor, z.literal("transparent")]);
 const id = z.string().min(1).max(64);
 const finite = z.number();
+
+/**
+ * Extra details a chart type keeps on a shape or connector, such as a C4 element's type and
+ * technology or a person's job title. Rendered as a subtitle (`subtitle`, `detail`) and body
+ * text (`description`) when present.
+ */
+export const metaSchema = z
+  .record(z.string().min(1).max(40), z.string().max(2_000))
+  .refine((m) => Object.keys(m).length <= 30, "Too many details");
+export type ShapeMeta = z.infer<typeof metaSchema>;
 
 export const nodeSchema = z.object({
   id,
@@ -79,6 +117,7 @@ export const nodeSchema = z.object({
   /** Library icon id for "icon" nodes; null otherwise. */
   icon: z.string().max(64).nullable(),
   layerId: id,
+  meta: metaSchema.optional(),
 });
 export type DiagramNode = z.infer<typeof nodeSchema>;
 
@@ -93,6 +132,10 @@ export const edgeSchema = z.object({
   stroke: hexColor,
   strokeWidth: finite.min(0.5).max(20),
   strokePattern: z.enum(STROKE_PATTERNS),
+  /** Text beside each end, such as a multiplicity ("1", "0..*") or a role. */
+  startLabel: z.string().max(100).optional(),
+  endLabel: z.string().max(100).optional(),
+  meta: metaSchema.optional(),
 });
 export type DiagramEdge = z.infer<typeof edgeSchema>;
 

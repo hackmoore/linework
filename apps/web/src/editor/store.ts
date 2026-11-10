@@ -6,6 +6,7 @@ import { withoutCards } from "../kanban/model";
 import { flowEdgeDefaults, flowNodeStyle } from "../flowchart/model";
 import { pruneNetwork } from "../network/model";
 import { withoutItems } from "../roadmap/model";
+import { fitAllCompartments } from "../render/compartments";
 import { rectsIntersect, type Rect } from "../render/geometry";
 
 export type Tool = "select" | "connect" | ShapeKind;
@@ -153,8 +154,10 @@ export const useEditor = create<EditorState>()((set, get) => ({
   commit(recipe) {
     const { diagram, past, selection } = get();
     if (!diagram) return;
-    const next = recipe(diagram);
-    if (next === diagram) return;
+    const recipeResult = recipe(diagram);
+    if (recipeResult === diagram) return;
+    // Table and class shapes always fit their label.
+    const next = fitAllCompartments(recipeResult);
     set({
       diagram: touch(next),
       past: [...past, diagram].slice(-HISTORY_LIMIT),
@@ -174,7 +177,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     const { diagram } = get();
     if (!diagram) return;
     const next = recipe(diagram);
-    if (next !== diagram) set({ diagram: touch(next) });
+    if (next !== diagram) set({ diagram: touch(fitAllCompartments(next)) });
   },
 
   applyRemote(transform, replace = false) {

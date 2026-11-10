@@ -53,6 +53,15 @@ export function boundsOf(boxes: readonly Box[]): Rect | null {
 
 const r2 = (n: number): string => String(Math.round(n * 100) / 100);
 
+function personHeadRadius(box: Box): number {
+  return Math.min(box.width * 0.16, box.height * 0.2);
+}
+
+/** Top of a C4 person's body, below the overlapping part of the head. */
+export function personBodyTop(box: Box): number {
+  return box.y + personHeadRadius(box) * 1.6;
+}
+
 /** SVG path outline for a shape kind. "text" has no outline and returns an empty string. */
 export function shapePath(kind: ShapeKind, box: Box, cornerRadius: number): string {
   const { x, y, width: w, height: h } = box;
@@ -106,6 +115,25 @@ export function shapePath(kind: ShapeKind, box: Box, cornerRadius: number): stri
         `M${r2(x + w * 0.22)} ${r2(y + h * 0.76)}L${r2(cx)} ${r2(hip)}L${r2(x + w * 0.78)} ${r2(y + h * 0.76)}`
       );
     }
+    case "person": {
+      // C4 person: a head overlapping the top of a rounded body that holds the label.
+      const r = personHeadRadius(box);
+      const cx = x + w / 2;
+      const top = personBodyTop(box);
+      const br = Math.min(r * 1.2, w / 4, (h - r * 1.6) / 2);
+      const head =
+        `M${r2(cx - r)} ${r2(y + r)}a${r2(r)} ${r2(r)} 0 1 1 ${r2(r * 2)} 0` +
+        `a${r2(r)} ${r2(r)} 0 1 1 ${r2(-r * 2)} 0Z`;
+      return (
+        `M${r2(x + br)} ${r2(top)}H${r2(x + w - br)}A${r2(br)} ${r2(br)} 0 0 1 ${r2(x + w)} ${r2(top + br)}` +
+        `V${r2(y + h - br)}A${r2(br)} ${r2(br)} 0 0 1 ${r2(x + w - br)} ${r2(y + h)}` +
+        `H${r2(x + br)}A${r2(br)} ${r2(br)} 0 0 1 ${r2(x)} ${r2(y + h - br)}` +
+        `V${r2(top + br)}A${r2(br)} ${r2(br)} 0 0 1 ${r2(x + br)} ${r2(top)}Z` +
+        head
+      );
+    }
+    case "table":
+    case "class":
     case "rectangle":
     case "container":
       return `M${r2(x)} ${r2(y)}H${r2(x + w)}V${r2(y + h)}H${r2(x)}Z`;
@@ -126,6 +154,8 @@ export function shapePath(kind: ShapeKind, box: Box, cornerRadius: number): stri
         `V${r2(y + r)}A${r2(r)} ${r2(r)} 0 0 1 ${r2(x + r)} ${r2(y)}Z`
       );
     }
+    case "initial":
+    case "final":
     case "ellipse": {
       const rx = w / 2;
       const ry = h / 2;
@@ -171,7 +201,7 @@ export function boundaryPoint(node: DiagramNode, toward: Point): Point {
   const hw = node.width / 2;
   const hh = node.height / 2;
   let t: number;
-  if (node.kind === "ellipse") {
+  if (node.kind === "ellipse" || node.kind === "initial" || node.kind === "final") {
     t = 1 / Math.sqrt((dx * dx) / (hw * hw) + (dy * dy) / (hh * hh));
   } else if (node.kind === "diamond") {
     t = 1 / (Math.abs(dx) / hw + Math.abs(dy) / hh);
@@ -254,6 +284,7 @@ export function edgePoints(
       flow === "TB" ? target.y + target.height <= source.y : target.x + target.width <= source.x;
     if (backwards) return loopPoints(source, target, flow);
   }
+  if (edge.routing === "curved") return curvePoints(source, target);
   if (edge.routing === "elbow") {
     const dx = tc.x - sc.x;
     const dy = tc.y - sc.y;
@@ -279,6 +310,45 @@ export function edgePoints(
     ]);
   }
   return [boundaryPoint(source, tc), boundaryPoint(target, sc)];
+}
+
+/**
+ * A smooth S-curve between the facing sides of two shapes, as four points: start, two
+ * control points and end. Used by mind maps.
+ */
+function curvePoints(source: DiagramNode, target: DiagramNode): Point[] {
+  const sc = center(source);
+  const tc = center(target);
+  const dx = tc.x - sc.x;
+  const dy = tc.y - sc.y;
+  if (Math.abs(dx) >= Math.abs(dy) * 0.6) {
+    const s = { x: sc.x + Math.sign(dx) * (source.width / 2), y: sc.y };
+    const t = { x: tc.x - Math.sign(dx) * (target.width / 2), y: tc.y };
+    const pull = (t.x - s.x) / 2;
+    return [s, { x: s.x + pull, y: s.y }, { x: t.x - pull, y: t.y }, t];
+  }
+  const s = { x: sc.x, y: sc.y + Math.sign(dy) * (source.height / 2) };
+  const t = { x: tc.x, y: tc.y - Math.sign(dy) * (target.height / 2) };
+  const pull = (t.y - s.y) / 2;
+  return [s, { x: s.x, y: s.y + pull }, { x: t.x, y: t.y - pull }, t];
+}
+
+/** SVG path for an edge's points: a cubic curve for curved edges, otherwise a polyline. */
+export function edgePath(routing: DiagramEdge["routing"], points: readonly Point[]): string {
+  const [s, c1, c2, t] = points;
+  if (routing === "curved" && points.length === 4 && s && c1 && c2 && t) {
+    return `M${r2(s.x)} ${r2(s.y)}C${r2(c1.x)} ${r2(c1.y)} ${r2(c2.x)} ${r2(c2.y)} ${r2(t.x)} ${r2(t.y)}`;
+  }
+  return pointsToPath(points);
+}
+
+/** Where an edge's label sits: halfway along it. */
+export function edgeMidpoint(routing: DiagramEdge["routing"], points: readonly Point[]): Point {
+  const [s, c1, c2, t] = points;
+  if (routing === "curved" && points.length === 4 && s && c1 && c2 && t) {
+    return { x: (s.x + 3 * c1.x + 3 * c2.x + t.x) / 8, y: (s.y + 3 * c1.y + 3 * c2.y + t.y) / 8 };
+  }
+  return polylineMidpoint(points);
 }
 
 /** Edge from a node to a free point, used while dragging out a new connector. */

@@ -40,7 +40,7 @@ const FILL_SWATCHES = [
   "#fff3b0",
 ];
 
-const titleCase = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+const titleCase = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1).replaceAll("-", " ");
 
 /** The shared value of a property across items, or undefined when they differ. */
 function common<T, K extends keyof T>(items: readonly T[], key: K): T[K] | undefined {

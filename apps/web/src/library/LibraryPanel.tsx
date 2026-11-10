@@ -28,6 +28,11 @@ const SHAPE_NAMES: Partial<Record<ShapeKind, string>> = {
   actor: "Person",
   terminal: "Start / end",
   subroutine: "Subprocess",
+  table: "Database table",
+  class: "UML class",
+  initial: "Initial state",
+  final: "Final state",
+  person: "Person (C4)",
 };
 
 function shapeName(kind: ShapeKind): string {
