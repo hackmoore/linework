@@ -4,7 +4,7 @@ Each chart type is a structured document with its own objects, editor and guidan
 (see `apps/web/src/charts/chartTypes.ts`). Freeform diagrams remain available for
 anything that does not fit a type.
 
-Status: **Gantt**, **Kanban**, **Flowchart**, **Network map** and **Freeform** are implemented. The rest are candidates, ranked by
+Status: **Gantt**, **Roadmap**, **Kanban**, **Flowchart**, **Network map** and **Freeform** are implemented. The rest are candidates, ranked by
 fit with Linework's focus on project management and software design.
 
 | Priority | Chart                        | Objects                                                     | Why                                                        |
@@ -14,7 +14,7 @@ fit with Linework's focus on project management and software design.
 | Done     | Kanban board                 | Columns, cards, WIP limits, swimlanes                       | Shipped                                                    |
 | Done     | Network map                  | Entities with details, typed links, confidence, dates       | Shipped (requested); link analysis for investigations      |
 | Done     | Flowchart                    | Start/end, step, decision, input/output, swimlanes          | Shipped                                                    |
-| 3        | Roadmap / timeline           | Lanes, items, quarters, milestones                          | Reuses the Gantt date engine                               |
+| Done     | Roadmap / timeline           | Lanes, items, quarters, milestones                          | Shipped                                                    |
 | 4        | Sequence diagram             | Lifelines, messages, activations, notes                     | Core software design; awkward to draw freehand             |
 | 5        | Architecture / C4            | Systems, containers, components, boundaries, icon libraries | High demand; Mermaid supports C4 and architecture diagrams |
 | 6        | Entity-relationship          | Tables, columns, keys, crow's-foot relations                | Every backend team draws these                             |
