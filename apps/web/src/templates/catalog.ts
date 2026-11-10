@@ -18,6 +18,7 @@ export const TEMPLATE_IDS = [
   "architecture-blank",
   "er",
   "er-blank",
+  "org-blank",
 ] as const;
 export type TemplateId = (typeof TEMPLATE_IDS)[number];
 
@@ -165,11 +166,20 @@ export const TEMPLATE_CATALOG: readonly TemplateInfo[] = [
   },
   {
     id: "org-chart",
-    chartType: "freeform",
-    name: "Team structure",
-    description: "Who owns what across a project team.",
+    chartType: "org",
+    name: "Company org chart",
+    description:
+      "A small product company: leadership, engineering, design and operations, with an open role.",
     category: "Project management",
     blank: false,
+  },
+  {
+    id: "org-blank",
+    chartType: "org",
+    name: "Blank org chart",
+    description: "An empty org chart, ready for the first person.",
+    category: "Project management",
+    blank: true,
   },
 ];
 

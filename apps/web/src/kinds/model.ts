@@ -47,6 +47,8 @@ export interface KindModel {
   readonly exports?: readonly KindExport[];
   readonly importers?: readonly KindImporter[];
   readonly checks?: (diagram: Diagram) => readonly KindIssue[];
+  /** Which way elbow connectors leave their source, such as always down in an org chart. */
+  readonly elbowAxis?: (diagram: Diagram) => "TB" | "LR";
 }
 
 /** Chart types drawn on the canvas, as opposed to gantt charts, kanban boards and roadmaps. */

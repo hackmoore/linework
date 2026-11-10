@@ -11,6 +11,7 @@ import type {
 } from "@linework/shared";
 import { architectureTemplate } from "../architecture/templates";
 import { erTemplate } from "../er/templates";
+import { orgTemplate } from "../org/templates";
 import { createDiagram, createEdge, createNode } from "../diagram/factory";
 import type { StyleId } from "../diagram/styles";
 import {
@@ -60,10 +61,6 @@ class TemplateBuilder {
   }
 }
 
-const BLUE = { fill: "#e8f0fe", stroke: "#1a56db" };
-const PURPLE = { fill: "#f1ebff", stroke: "#6d28d9" };
-const GREY = { fill: "#f3f4f6", stroke: "#4b5563" };
-
 /** Adds a flowchart step with the flowchart colours for its kind. */
 function step(b: TemplateBuilder, key: string, kind: ShapeKind, cx: number, cy: number, label: string): void {
   b.node(key, kind, cx, cy, label, flowNodeStyle(kind));
@@ -106,28 +103,6 @@ function approval(b: TemplateBuilder): void {
     .edge("pay", "record", ELBOW)
     .edge("record", "end", ELBOW);
 }
-
-function orgChart(b: TemplateBuilder): void {
-  b.node("lead", "rounded", 400, 60, "Project lead", PURPLE)
-    .node("design", "rounded", 160, 200, "Design", BLUE)
-    .node("eng", "rounded", 400, 200, "Engineering", BLUE)
-    .node("qa", "rounded", 640, 200, "Quality", BLUE)
-    .node("fe", "rectangle", 300, 340, "Frontend", GREY)
-    .node("be", "rectangle", 500, 340, "Backend", GREY);
-  for (const [from, to] of [
-    ["lead", "design"],
-    ["lead", "eng"],
-    ["lead", "qa"],
-    ["eng", "fe"],
-    ["eng", "be"],
-  ] as const) {
-    b.edge(from, to, { routing: "elbow", arrowEnd: "none" });
-  }
-}
-
-const BUILDERS: Readonly<Partial<Record<TemplateId, (b: TemplateBuilder) => void>>> = {
-  "org-chart": orgChart,
-};
 
 /** Example launch plan, dated from the start of the current week so it always looks current. */
 function launchPlan(): Diagram["gantt"] {
@@ -229,6 +204,9 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
   if (templateId === "network-blank" || templateId === "network-investigation") {
     return networkTemplate(templateId, styleId, info?.name ?? "Network map");
   }
+  if (templateId === "org-chart" || templateId === "org-blank") {
+    return orgTemplate(styleId, info?.name ?? "Org chart", templateId === "org-blank");
+  }
   if (templateId === "er" || templateId === "er-blank") {
     return erTemplate(styleId, info?.name ?? "Database", templateId === "er-blank");
   }
@@ -242,13 +220,7 @@ export function buildTemplate(templateId: TemplateId, styleId: StyleId = "profes
   if (templateId === "flowchart-blank" || templateId === "flowchart" || templateId === "flowchart-approval") {
     return flowchartTemplate(templateId, styleId, info?.name ?? "Flowchart");
   }
-  const title = templateId === "blank" || !info ? "Untitled diagram" : info.name;
-  const diagram = createDiagram(title, styleId);
-  const build = BUILDERS[templateId];
-  if (!build) return diagram;
-  const builder = new TemplateBuilder();
-  build(builder);
-  return { ...diagram, nodes: builder.nodes, edges: builder.edges };
+  return createDiagram("Untitled diagram", styleId);
 }
 
 function flowchartTemplate(

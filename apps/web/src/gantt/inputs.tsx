@@ -8,6 +8,8 @@ interface CommitInputProps {
   readonly label: string;
   readonly maxLength?: number;
   readonly placeholder?: string;
+  /** Id of a <datalist> of suggestions. */
+  readonly list?: string;
 }
 
 /**
@@ -21,6 +23,7 @@ export function CommitInput({
   label,
   maxLength = 200,
   placeholder,
+  list,
 }: CommitInputProps): ReactElement {
   const [draft, setDraft] = useState(value);
   const cancelled = useRef(false);
@@ -28,6 +31,7 @@ export function CommitInput({
     <input
       className={className}
       aria-label={label}
+      list={list}
       value={draft}
       maxLength={maxLength}
       placeholder={placeholder}

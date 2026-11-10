@@ -243,6 +243,27 @@ export const CHART_TYPE_INFO: Readonly<Record<ChartType, ChartTypeInfo>> = {
     ],
     item: ["table", "tables"],
   },
+  org: {
+    id: "org",
+    name: "Org chart",
+    tagline: "Show who reports to whom, with job titles, departments and open positions.",
+    bestFor: ["Company and team structures", "Planning hires and reorganisations", "Onboarding: who's who"],
+    objects: [
+      {
+        name: "Person",
+        description: "A card with a name, job title and department. Cards are coloured by department.",
+      },
+      { name: "Reporting line", description: "A line from a manager down to someone who reports to them." },
+      { name: "Open position", description: "A dashed card for a role that hasn't been filled yet." },
+    ],
+    tips: [
+      "Select a person and press Tab to add a report, or Enter to add a peer with the same manager.",
+      "Change who someone reports to in the panel; their whole team moves with them.",
+      "The chart lays itself out as you add people. Switch between top to bottom and left to right in the panel.",
+      "Import a CSV with Name, Title, Manager and Department columns from My diagrams, or export one from Export.",
+    ],
+    item: ["person", "people"],
+  },
   freeform: {
     id: "freeform",
     name: "Freeform diagram",
@@ -273,6 +294,7 @@ export const CHART_TYPE_ORDER: readonly ChartType[] = [
   "network",
   "architecture",
   "er",
+  "org",
   "freeform",
 ];
 

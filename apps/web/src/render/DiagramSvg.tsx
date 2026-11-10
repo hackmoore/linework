@@ -9,6 +9,7 @@ import type {
   StrokePattern,
 } from "@linework/shared";
 import { getStyle, type DiagramStyle } from "../diagram/styles";
+import { kindModel } from "../kinds/registry";
 import { getIcon } from "../library/icons";
 import { flowDirection, laneBands, type LaneBand } from "../flowchart/model";
 import {
@@ -646,6 +647,7 @@ interface EdgeViewProps {
   readonly labelBackground: string;
   /** Flowchart direction, for routing loops; undefined for other diagrams. */
   readonly flow: FlowDirection | undefined;
+  readonly axis: "TB" | "LR" | undefined;
   /** Lines go under shapes; labels are drawn again on top so shapes never hide them. */
   readonly layer: "line" | "label";
 }
@@ -694,9 +696,10 @@ const EdgeView = memo(function EdgeView({
   style,
   labelBackground,
   flow,
+  axis,
   layer,
 }: EdgeViewProps): ReactElement {
-  const points = edgePoints(edge, source, target, flow);
+  const points = edgePoints(edge, source, target, flow, axis);
   const d = edgePath(edge.routing, points);
   const size = 8 + edge.strokeWidth * 2;
   const last = points[points.length - 1];
@@ -888,6 +891,7 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
   const lanes = useMemo(() => laneBands(diagram), [diagram]);
   const vertical = diagram.flowchart?.direction !== "LR";
   const flow = flowDirection(diagram);
+  const axis = kindModel(diagram.chartType)?.elbowAxis?.(diagram);
   return (
     <g fontFamily={style.fontFamily}>
       {lanes.map((band) => (
@@ -915,6 +919,7 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
             style={style}
             labelBackground={labelBackground}
             flow={flow}
+            axis={axis}
             layer="line"
           />
         );
@@ -941,6 +946,7 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
             style={style}
             labelBackground={labelBackground}
             flow={flow}
+            axis={axis}
             layer="label"
           />
         );

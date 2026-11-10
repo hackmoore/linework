@@ -274,6 +274,8 @@ export function edgePoints(
   source: DiagramNode,
   target: DiagramNode,
   flow?: "TB" | "LR",
+  /** Which way elbow connectors leave their source, when a chart type fixes it (org charts). */
+  axis?: "TB" | "LR",
 ): Point[] {
   source = attachBox(source);
   target = attachBox(target);
@@ -288,7 +290,7 @@ export function edgePoints(
   if (edge.routing === "elbow") {
     const dx = tc.x - sc.x;
     const dy = tc.y - sc.y;
-    if (Math.abs(dx) >= Math.abs(dy)) {
+    if (axis ? axis === "LR" : Math.abs(dx) >= Math.abs(dy)) {
       const sx = sc.x + Math.sign(dx) * (source.width / 2);
       const tx = tc.x - Math.sign(dx) * (target.width / 2);
       const midX = (sx + tx) / 2;

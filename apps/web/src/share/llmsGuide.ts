@@ -295,6 +295,24 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
   zero-or-one, one-or-many or zero-or-many. \`label\`: a verb.
 - \`direction\`: LR (default) or TB.
 
+### Org chart (company structure, team, reporting lines)
+
+    {
+      "type": "org",
+      "title": "Acme",
+      "people": [
+        { "id": "ceo", "name": "Maya Patel", "title": "CEO", "department": "Leadership" },
+        { "id": "cto", "name": "Tom Okafor", "title": "CTO", "department": "Engineering", "manager": "ceo" },
+        { "name": "Backend engineer", "department": "Engineering", "manager": "cto", "vacant": true }
+      ]
+    }
+
+- People need a \`name\`. \`id\` defaults to the name. \`manager\` is the id or name of the
+  person they report to; leave it out for the top of the chart.
+- Optional: \`title\`, \`department\` (cards are coloured by it), \`email\`, \`vacant\` (an
+  open position).
+- \`direction\`: TB (default) or LR.
+
 ## Rules
 
 1. Give the user the full link as a clickable link. Don't show the encoded payload separately.

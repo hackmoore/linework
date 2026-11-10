@@ -23,6 +23,7 @@ import { useUi } from "./ui";
 import { currentSession, useLive } from "../collab/session";
 import { editableLayerIds, useEditor, type Viewport } from "./store";
 import { TextEditor } from "./TextEditor";
+import { kindModel } from "../kinds/registry";
 import { flowDirection } from "../flowchart/model";
 
 const GRID = 10;
@@ -522,7 +523,16 @@ export function Canvas(): ReactElement | null {
                 <path
                   key={edge.id}
                   className="canvas__edge-selected"
-                  d={edgePath(edge.routing, edgePoints(edge, s, t, flowDirection(diagram)))}
+                  d={edgePath(
+                    edge.routing,
+                    edgePoints(
+                      edge,
+                      s,
+                      t,
+                      flowDirection(diagram),
+                      kindModel(diagram.chartType)?.elbowAxis?.(diagram),
+                    ),
+                  )}
                   strokeWidth={edge.strokeWidth + 6 * strokeScale}
                 />
               );
@@ -670,7 +680,13 @@ function EdgeTextEditor({ edgeId }: { edgeId: string }): ReactElement | null {
   if (!edge || !source || !target) return null;
   const mid = edgeMidpoint(
     edge.routing,
-    edgePoints(edge, source, target, diagram ? flowDirection(diagram) : undefined),
+    edgePoints(
+      edge,
+      source,
+      target,
+      diagram ? flowDirection(diagram) : undefined,
+      diagram ? kindModel(diagram.chartType)?.elbowAxis?.(diagram) : undefined,
+    ),
   );
   const width = 160 * viewport.zoom;
   const height = 48 * viewport.zoom;
