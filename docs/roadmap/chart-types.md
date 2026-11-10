@@ -4,7 +4,7 @@ Each chart type is a structured document with its own objects, editor and guidan
 (see `apps/web/src/charts/chartTypes.ts`). Freeform diagrams remain available for
 anything that does not fit a type.
 
-Status: **Gantt**, **Kanban**, **Flowchart** and **Freeform** are implemented. The rest are candidates, ranked by
+Status: **Gantt**, **Kanban**, **Flowchart**, **Network map** and **Freeform** are implemented. The rest are candidates, ranked by
 fit with Linework's focus on project management and software design.
 
 | Priority | Chart                        | Objects                                                     | Why                                                        |
@@ -12,6 +12,7 @@ fit with Linework's focus on project management and software design.
 | Done     | Gantt                        | Sections, tasks, milestones, dependencies                   | Shipped                                                    |
 | Done     | Freeform                     | Shapes, connectors                                          | Shipped                                                    |
 | Done     | Kanban board                 | Columns, cards, WIP limits, swimlanes                       | Shipped                                                    |
+| Done     | Network map                  | Entities with details, typed links, confidence, dates       | Shipped (requested); link analysis for investigations      |
 | Done     | Flowchart                    | Start/end, step, decision, input/output, swimlanes          | Shipped                                                    |
 | 3        | Roadmap / timeline           | Lanes, items, quarters, milestones                          | Reuses the Gantt date engine                               |
 | 4        | Sequence diagram             | Lifelines, messages, activations, notes                     | Core software design; awkward to draw freehand             |
