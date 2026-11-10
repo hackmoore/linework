@@ -13,6 +13,7 @@ import { getIcon } from "../library/icons";
 import { flowDirection, laneBands, type LaneBand } from "../flowchart/model";
 import {
   edgePoints,
+  iconGlyphSize,
   pointsToPath,
   polylineMidpoint,
   seedFrom,
@@ -104,9 +105,11 @@ export function StrokedPath({
 interface LabelProps {
   readonly node: DiagramNode;
   readonly style: DiagramStyle;
+  /** Background colour drawn around the text, so lines passing behind it don't hide it. */
+  readonly halo?: string | undefined;
 }
 
-function NodeLabel({ node, style }: LabelProps): ReactElement | null {
+function NodeLabel({ node, style, halo }: LabelProps): ReactElement | null {
   if (!node.label) return null;
   const maxWidth = Math.max(10, node.width - TEXT_PADDING * 2);
   const lines = wrapText(node.label, maxWidth, node.fontSize);
@@ -127,7 +130,7 @@ function NodeLabel({ node, style }: LabelProps): ReactElement | null {
         : node.kind === "icon"
           ? node.y + iconSize(node) + 6 + lineHeight / 2
           : node.y + node.height / 2 - ((lines.length - 1) * lineHeight) / 2;
-  return (
+  const text = (
     <text
       fill={node.textColor}
       fontSize={node.fontSize}
@@ -144,12 +147,27 @@ function NodeLabel({ node, style }: LabelProps): ReactElement | null {
       ))}
     </text>
   );
+  if (!halo) return text;
+  // A backing plate under labels drawn outside the shape keeps lines behind them readable.
+  const width = Math.max(...lines.map((l) => l.length)) * node.fontSize * 0.58 + 8;
+  const left = anchor === "start" ? x - 4 : anchor === "end" ? x - width + 4 : x - width / 2;
+  return (
+    <g>
+      <rect
+        x={left}
+        y={firstY - lineHeight / 2 - 1}
+        width={width}
+        height={lines.length * lineHeight + 2}
+        rx={3}
+        fill={halo}
+        opacity={0.9}
+      />
+      {text}
+    </g>
+  );
 }
 
-/** Side of the square an icon node's glyph is drawn in, leaving room for a label below. */
-function iconSize(node: DiagramNode): number {
-  return Math.max(8, Math.min(node.width, node.height - (node.label ? node.fontSize * LINE_HEIGHT + 8 : 0)));
-}
+const iconSize = iconGlyphSize;
 
 function IconGlyph({ node, style }: { node: DiagramNode; style: DiagramStyle }): ReactElement {
   const size = iconSize(node);
@@ -181,9 +199,11 @@ interface NodeViewProps {
   readonly node: DiagramNode;
   readonly style: DiagramStyle;
   readonly hideLabel: boolean;
+  /** Background colour, used as a halo behind labels drawn outside the shape. */
+  readonly halo: string;
 }
 
-const NodeView = memo(function NodeView({ node, style, hideLabel }: NodeViewProps): ReactElement {
+const NodeView = memo(function NodeView({ node, style, hideLabel, halo }: NodeViewProps): ReactElement {
   const d = shapePath(node.kind, node, style.cornerRadius);
   return (
     <g data-node-id={node.id}>
@@ -209,7 +229,13 @@ const NodeView = memo(function NodeView({ node, style, hideLabel }: NodeViewProp
         // Unfilled shapes should still be grabbable from their interior.
         <path d={d} fill="transparent" stroke="none" />
       )}
-      {!hideLabel && <NodeLabel node={node} style={style} />}
+      {!hideLabel && (
+        <NodeLabel
+          node={node}
+          style={style}
+          halo={node.kind === "icon" || node.kind === "actor" ? halo : undefined}
+        />
+      )}
     </g>
   );
 });
@@ -433,7 +459,13 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
         <LaneView key={band.lane.id} band={band} vertical={vertical} />
       ))}
       {containers.map((node) => (
-        <NodeView key={node.id} node={node} style={style} hideLabel={node.id === editingNodeId} />
+        <NodeView
+          key={node.id}
+          node={node}
+          style={style}
+          hideLabel={node.id === editingNodeId}
+          halo={labelBackground}
+        />
       ))}
       {diagram.edges.map((edge) => {
         const source = nodesById.get(edge.source);
@@ -452,7 +484,13 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
         );
       })}
       {others.map((node) => (
-        <NodeView key={node.id} node={node} style={style} hideLabel={node.id === editingNodeId} />
+        <NodeView
+          key={node.id}
+          node={node}
+          style={style}
+          hideLabel={node.id === editingNodeId}
+          halo={labelBackground}
+        />
       ))}
     </g>
   );

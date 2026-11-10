@@ -181,6 +181,18 @@ export function boundaryPoint(node: DiagramNode, toward: Point): Point {
   return { x: c.x + dx * t, y: c.y + dy * t };
 }
 
+/** Side of the square an icon node's glyph is drawn in, leaving room for a label below. */
+export function iconGlyphSize(node: DiagramNode): number {
+  return Math.max(8, Math.min(node.width, node.height - (node.label ? node.fontSize * 1.3 + 8 : 0)));
+}
+
+/** The part of a node that connectors attach to: an icon node's glyph, not its label. */
+function attachBox(node: DiagramNode): DiagramNode {
+  if (node.kind !== "icon") return node;
+  const size = iconGlyphSize(node);
+  return { ...node, kind: "rectangle", x: node.x + (node.width - size) / 2, width: size, height: size };
+}
+
 /** Space between a looping connector and the shapes it goes around. */
 const LOOP_GAP = 28;
 
@@ -233,6 +245,8 @@ export function edgePoints(
   target: DiagramNode,
   flow?: "TB" | "LR",
 ): Point[] {
+  source = attachBox(source);
+  target = attachBox(target);
   const sc = center(source);
   const tc = center(target);
   if (edge.routing === "elbow" && flow) {
@@ -269,7 +283,7 @@ export function edgePoints(
 
 /** Edge from a node to a free point, used while dragging out a new connector. */
 export function previewPoints(source: DiagramNode, to: Point): Point[] {
-  return [boundaryPoint(source, to), to];
+  return [boundaryPoint(attachBox(source), to), to];
 }
 
 /** Removes repeated points and middle points of straight axis-aligned runs. */
