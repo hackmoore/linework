@@ -1,9 +1,9 @@
 # Self-hosting with Docker Compose
 
-Linework runs as two containers:
+Linework runs as two containers, both published to GitHub Container Registry for `linux/amd64` and `linux/arm64`:
 
-- **web**: Caddy serving the built app. It also forwards `/api` to the relay and, when given a domain name, gets and renews an HTTPS certificate automatically.
-- **api**: the live-collaboration relay. It only forwards end-to-end encrypted messages and stores nothing.
+- **web** (`ghcr.io/hackmoore/linework-web`): Caddy serving the app. It forwards `/api` to the relay and, when given a domain name, gets and renews an HTTPS certificate automatically.
+- **api** (`ghcr.io/hackmoore/linework-api`): the live-collaboration relay. It only forwards end-to-end encrypted messages and stores nothing. It is optional.
 
 Charts live in each visitor's browser, so there is no database and nothing to back up.
 
@@ -16,15 +16,15 @@ HTTPS matters. Browsers only allow the encryption that live collaboration uses o
 
 ## Run it
 
+1. Copy the example Compose file from the [README](../README.md#self-hosting) into `docker-compose.yml` on your server.
+2. Replace `linework.example.com` with your domain in all three places.
+3. Start it:
+
 ```sh
-git clone <your fork or this repo> linework && cd linework
-cp docker-compose.example.yml docker-compose.yml
-cp .env.example .env
-# Edit .env: set LINEWORK_SITE_ADDRESS and LINEWORK_SITE_URL to your domain.
-docker compose up -d --build
+docker compose up -d
 ```
 
-Open `https://your-domain`. The first start takes a minute while the images build and Caddy gets a certificate.
+Open `https://your-domain`. The first start takes a moment while Caddy gets a certificate.
 
 Check status and logs:
 
@@ -33,17 +33,23 @@ docker compose ps
 docker compose logs -f
 ```
 
+## Without live collaboration
+
+The `api` service is optional. Leave it out of `docker-compose.yml` and everything else works as usual. The editor checks for the relay when it opens and, if there is none, disables the **Share live** button. Live links then explain that live sessions aren't set up on this server.
+
 ## Behind an existing reverse proxy
 
-If nginx, Traefik or another Caddy already handles HTTPS on the server, let it do so and serve plain HTTP from Linework on a spare port:
+If nginx, Traefik or another Caddy already handles HTTPS on the server, let it do so and have Linework serve plain HTTP on a spare port. In the `web` service:
 
-```sh
-LINEWORK_SITE_ADDRESS=:80
-LINEWORK_SITE_URL=https://linework.example.com
-HTTP_PORT=8080
+```yaml
+environment:
+  LINEWORK_SITE_ADDRESS: ":80"
+  LINEWORK_SITE_URL: https://linework.example.com
+ports:
+  - "127.0.0.1:8080:80"
 ```
 
-Remove the two `443` port lines from your `docker-compose.yml`, then proxy your domain to `http://127.0.0.1:8080`. The proxy must pass WebSocket upgrades on `/api/`. For nginx:
+Then proxy your domain to `http://127.0.0.1:8080`. The proxy must pass WebSocket upgrades on `/api/`. For nginx:
 
 ```nginx
 location / {
@@ -58,7 +64,7 @@ location / {
 
 ### Traefik
 
-With Traefik, don't publish any ports. Set `LINEWORK_SITE_ADDRESS=:80`, attach the `web` service to Traefik's Docker network and add router labels. The sample file has them commented out:
+With Traefik, don't publish any ports. Set `LINEWORK_SITE_ADDRESS: ":80"`, attach the `web` service to Traefik's Docker network and add router labels:
 
 ```yaml
 services:
@@ -80,41 +86,29 @@ Replace `traefik` with the name of the network Traefik uses. Traefik forwards We
 
 ## Settings
 
-| Variable                | Purpose                                                                                                                                     |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LINEWORK_SITE_ADDRESS` | What Caddy listens for: a domain (automatic HTTPS) or a port such as `:80`.                                                                 |
-| `LINEWORK_SITE_URL`     | Public URL. Written into `/llms.txt`, link previews and the sitemap at build time. Only pages from this origin may join rooms on the relay. |
-| `HTTP_PORT`             | Host port for HTTP. Default 80.                                                                                                             |
-| `HTTPS_PORT`            | Host port for HTTPS. Default 443.                                                                                                           |
-| `LINEWORK_WEB_IMAGE`    | Image for the web container. Default `linework-web`, built locally.                                                                         |
-| `LINEWORK_API_IMAGE`    | Image for the relay container. Default `linework-api`, built locally.                                                                       |
-
-Changing `LINEWORK_SITE_URL` needs a rebuild: `docker compose up -d --build`.
-
-Your `docker-compose.yml` and `.env` are not tracked by git, so edit them freely. After pulling an update, compare your copy with `docker-compose.example.yml` for new settings.
+| Service | Variable                   | Purpose                                                                                                                                                      |
+| ------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| web     | `LINEWORK_SITE_ADDRESS`    | What Caddy listens for: a domain (automatic HTTPS) or a port such as `:80`. Default `:80`.                                                                   |
+| web     | `LINEWORK_SITE_URL`        | Public URL, such as `https://linework.example.com`. Written into `/llms.txt`, link previews and the sitemap when the container starts. No rebuild is needed. |
+| api     | `LINEWORK_ALLOWED_ORIGINS` | Comma-separated origins allowed to join rooms, normally the same as `LINEWORK_SITE_URL`. Empty allows any origin.                                            |
 
 ## Updating
 
 ```sh
-git pull
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 docker image prune -f
 ```
 
-## Prebuilt images and automatic updates
+Every push to `main` publishes new images tagged `latest` and `sha-<commit>`. Pin a `sha-` tag to stay on one version, or let [Watchtower](https://containrrr.dev/watchtower/) or a similar tool pull new `latest` images as they are published.
 
-Every push to `main` runs the checks, then publishes both images to GitHub Container Registry for `linux/amd64` and `linux/arm64`:
+## Building the images yourself
 
-- `ghcr.io/hackmoore/linework-web`
-- `ghcr.io/hackmoore/linework-api`
-
-Each image is tagged `latest` and `sha-<commit>`. To use them instead of building on the server, set these in `.env`:
+From a clone of the repository:
 
 ```sh
-LINEWORK_WEB_IMAGE=ghcr.io/hackmoore/linework-web:latest
-LINEWORK_API_IMAGE=ghcr.io/hackmoore/linework-api:latest
+docker build --target web -t linework-web .
+docker build --target api -t linework-api .
 ```
 
-Then run `docker compose pull && docker compose up -d`. [Watchtower](https://containrrr.dev/watchtower/) or a similar tool can then pull new `latest` images as they are published.
-
-The web image has the site URL built in, so it is only right for the site it was built for. The workflow takes it from the repository variable `LINEWORK_SITE_URL` (Settings > Secrets and variables > Actions > Variables). A fork must set its own variable and publish its own images.
+Then use `image: linework-web` and `image: linework-api` in your `docker-compose.yml`.

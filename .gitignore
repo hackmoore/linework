@@ -10,7 +10,7 @@ coverage/
 .vite/
 apps/api/data/
 
-# Local deployment, copied from docker-compose.example.yml
+# Local deployments (see the example in README.md)
 docker-compose.yml
 docker-compose.override.yml
 

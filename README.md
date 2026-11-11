@@ -20,7 +20,7 @@ Each chart type has its own tools, layout and checks. For example, a Gantt chart
 ## Features
 
 - **Import and export.** Export PNG, SVG and PDF. Export or import Mermaid, CSV, MS Project XML, SQL and Markdown outlines, depending on the chart type.
-- **Live collaboration.** Edit together through a relay that only passes on end-to-end encrypted messages. The relay never sees your chart.
+- **Live collaboration.** Edit together through a relay that only passes on end-to-end encrypted messages. The relay never sees your chart, and self-hosters can leave it out.
 - **Generate with AI.** Describe a chart and Claude drafts it. You use your own Anthropic API key, which is sent only to Anthropic.
 - **Links that hold the chart.** A chart can be shared as a link with the chart inside it. Other AI assistants can create charts this way: follow the instructions at `/llms.txt`.
 - **Templates.** Every chart type has examples to start from.
@@ -50,7 +50,38 @@ pnpm check      # typecheck, lint, tests and build
 
 ## Self-hosting
 
-Linework runs as two Docker containers: Caddy serving the app, and the relay. There is no database. See [docs/self-hosting.md](docs/self-hosting.md).
+Linework runs as two Docker containers: Caddy serving the app, and the optional live-collaboration relay. There is no database. Save this as `docker-compose.yml`, replace `linework.example.com` with your domain, and run `docker compose up -d`:
+
+```yaml
+services:
+  web:
+    image: ghcr.io/hackmoore/linework-web:latest
+    restart: unless-stopped
+    environment:
+      # A domain gets HTTPS automatically. Use ":80" behind another reverse proxy.
+      LINEWORK_SITE_ADDRESS: linework.example.com
+      LINEWORK_SITE_URL: https://linework.example.com
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+  # Optional: live collaboration. Without it, the editor disables live sessions.
+  api:
+    image: ghcr.io/hackmoore/linework-api:latest
+    restart: unless-stopped
+    environment:
+      LINEWORK_ALLOWED_ORIGINS: https://linework.example.com
+
+volumes:
+  caddy_data:
+  caddy_config:
+```
+
+See [docs/self-hosting.md](docs/self-hosting.md) for running behind nginx or Traefik, settings, updates and building the images yourself.
 
 ## Licence
 
