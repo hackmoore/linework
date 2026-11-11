@@ -46,7 +46,10 @@ function withHead(html: string, page: Page): string {
   }
   if (page.description) {
     const description = escapeAttr(page.description);
-    out = out.replace(/(<meta\s+(?:name|property)="(?:og:)?description"\s+content=")[^"]*/g, `$1${description}`);
+    out = out.replace(
+      /(<meta\s+(?:name|property)="(?:og:)?description"\s+content=")[^"]*/g,
+      `$1${description}`,
+    );
   }
   if (siteUrl) {
     const url = escapeAttr(siteUrl + page.url);
