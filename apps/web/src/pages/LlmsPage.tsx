@@ -1,12 +1,18 @@
-import { useEffect, useMemo, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore, type ReactElement } from "react";
 import { Link } from "react-router";
 import { SiteFooter, SiteHeader } from "../components/SiteHeader";
 import { ICONS } from "../library/icons";
 import { llmsGuide } from "../share/llmsGuide";
 
+// The page is prerendered with the public URL the build was given (scripts/prerender.ts). It
+// hydrates with that value too, then switches to the address the browser is actually on.
+const buildOrigin = (): string => (import.meta.env.VITE_LINEWORK_SITE_URL as string | undefined) ?? "";
+const browserOrigin = (): string => window.location.origin;
+const noSubscribe = (): (() => void) => () => undefined;
+
 /** Human-facing page explaining how to have an AI assistant draw charts that open here. */
 export function LlmsPage(): ReactElement {
-  const origin = window.location.origin;
+  const origin = useSyncExternalStore(noSubscribe, browserOrigin, buildOrigin);
   const guide = useMemo(() => llmsGuide({ origin, iconIds: ICONS.map((i) => i.id) }), [origin]);
   const prompt = `Read ${origin}/llms.txt, then make me a Linework chart: `;
   const [copied, setCopied] = useState<string | null>(null);

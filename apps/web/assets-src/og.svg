@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Link preview image. Regenerate: rsvg-convert assets-src/og.svg -o public/og.png -->
+  <defs>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.6" fill="#d9dbe7"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#4f46e5"/>
+    </marker>
+  </defs>
+  <rect width="1200" height="630" fill="#f7f7fb"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+    <g transform="translate(72 72) scale(2)">
+      <rect width="32" height="32" rx="7" fill="#4f46e5"/>
+      <rect x="6" y="7" width="9" height="7" rx="1.5" fill="none" stroke="#fff" stroke-width="2"/>
+      <rect x="17" y="18" width="9" height="7" rx="1.5" fill="none" stroke="#fff" stroke-width="2"/>
+      <path d="M10.5 14v7.5H17" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <text x="152" y="122" font-size="40" font-weight="700" fill="#1e1b3a">Linework</text>
+    <text x="72" y="268" font-size="62" font-weight="700" fill="#1e1b3a">Diagrams for projects</text>
+    <text x="72" y="342" font-size="62" font-weight="700" fill="#1e1b3a">and software.</text>
+    <text x="72" y="416" font-size="62" font-weight="700" fill="#4f46e5">No sign-in.</text>
+    <text x="72" y="520" font-size="28" fill="#55536e">Gantt, flowchart, kanban, ER, sequence and more.</text>
+    <text x="72" y="562" font-size="28" fill="#55536e">Free and open source.</text>
+  </g>
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="22" font-weight="600" text-anchor="middle">
+    <rect x="860" y="150" width="220" height="72" rx="14" fill="#fff" stroke="#4f46e5" stroke-width="3"/>
+    <text x="970" y="194" fill="#1e1b3a">Plan</text>
+    <path d="M970 222V280" stroke="#4f46e5" stroke-width="3" marker-end="url(#arrow)"/>
+    <path d="M970 290L1070 340L970 390L870 340z" fill="#eef0ff" stroke="#4f46e5" stroke-width="3"/>
+    <text x="970" y="348" fill="#1e1b3a">Ready?</text>
+    <path d="M970 390V448" stroke="#4f46e5" stroke-width="3" marker-end="url(#arrow)"/>
+    <rect x="860" y="458" width="220" height="72" rx="14" fill="#4f46e5"/>
+    <text x="970" y="502" fill="#fff">Ship it</text>
+    <path d="M870 340H800V186H850" fill="none" stroke="#9a97b8" stroke-width="3" stroke-dasharray="8 7" marker-end="url(#arrow)"/>
+  </g>
+</svg>

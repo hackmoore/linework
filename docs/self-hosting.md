@@ -80,14 +80,14 @@ Replace `traefik` with the name of the network Traefik uses. Traefik forwards We
 
 ## Settings
 
-| Variable                | Purpose                                                                                                          |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `LINEWORK_SITE_ADDRESS` | What Caddy listens for: a domain (automatic HTTPS) or a port such as `:80`.                                      |
-| `LINEWORK_SITE_URL`     | Public URL. Written into `/llms.txt` at build time, and only pages from this origin may join rooms on the relay. |
-| `HTTP_PORT`             | Host port for HTTP. Default 80.                                                                                  |
-| `HTTPS_PORT`            | Host port for HTTPS. Default 443.                                                                                |
-| `LINEWORK_WEB_IMAGE`    | Image for the web container. Default `linework-web`, built locally.                                              |
-| `LINEWORK_API_IMAGE`    | Image for the relay container. Default `linework-api`, built locally.                                            |
+| Variable                | Purpose                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LINEWORK_SITE_ADDRESS` | What Caddy listens for: a domain (automatic HTTPS) or a port such as `:80`.                                                                 |
+| `LINEWORK_SITE_URL`     | Public URL. Written into `/llms.txt`, link previews and the sitemap at build time. Only pages from this origin may join rooms on the relay. |
+| `HTTP_PORT`             | Host port for HTTP. Default 80.                                                                                                             |
+| `HTTPS_PORT`            | Host port for HTTPS. Default 443.                                                                                                           |
+| `LINEWORK_WEB_IMAGE`    | Image for the web container. Default `linework-web`, built locally.                                                                         |
+| `LINEWORK_API_IMAGE`    | Image for the relay container. Default `linework-api`, built locally.                                                                       |
 
 Changing `LINEWORK_SITE_URL` needs a rebuild: `docker compose up -d --build`.
 

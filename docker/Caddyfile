@@ -20,10 +20,11 @@
 		root * /srv
 		@assets path /assets/*
 		header @assets Cache-Control "public, max-age=31536000, immutable"
-		@html path / /index.html
+		@html not path /assets/*
 		header @html Cache-Control "no-cache"
-		# Client-side routes (/new, /edit/...) fall back to the app shell.
-		try_files {path} /index.html
+		# Prerendered pages (/, /llms) have their own HTML. Every other route (/new, /d/...)
+		# gets the empty app shell.
+		try_files {path} {path}.html /app.html
 		file_server
 	}
 }
