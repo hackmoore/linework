@@ -13,6 +13,7 @@ import { SequenceInspector } from "../sequence/SequenceInspector";
 import { Canvas } from "./Canvas";
 import { ExportMenu } from "./ExportMenu";
 import { LiveControls } from "../collab/LiveControls";
+import { checkRelay } from "../collab/availability";
 import { parseRoomSecret } from "../collab/crypto";
 import { startSession, stopSession } from "../collab/session";
 import { Inspector } from "./Inspector";
@@ -67,7 +68,10 @@ export function EditorPage(): ReactElement {
       // A live link (#room=...&key=...) connects this document to the session.
       const secret = parseRoomSecret(window.location.hash);
       if (secret) {
-        void startSession(secret, false).then((session) => {
+        void checkRelay().then(async (available) => {
+          // Without the relay, open the local copy on its own; the Share live button explains why.
+          if (!available || cancelled) return;
+          const session = await startSession(secret, false);
           session.attach();
         });
       }

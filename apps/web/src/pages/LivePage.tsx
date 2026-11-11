@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
+import { checkRelay } from "../collab/availability";
 import { parseRoomSecret } from "../collab/crypto";
 import { ensureDisplayName } from "../collab/identity";
 import { startSession, stopSession } from "../collab/session";
@@ -25,6 +26,12 @@ export function LivePage(): ReactElement {
     ensureDisplayName();
     void (async () => {
       try {
+        if (!(await checkRelay())) {
+          setError(
+            "Live sessions aren't set up on this server, or it can't be reached right now. Ask the person who shared the link to send the chart another way, such as a share link.",
+          );
+          return;
+        }
         const session = await startSession(secret, true);
         const diagram = await session.waitForSnapshot(JOIN_TIMEOUT_MS);
         if (!diagram) {

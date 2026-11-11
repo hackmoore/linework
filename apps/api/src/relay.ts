@@ -54,7 +54,13 @@ export function createRelay(options: RelayOptions = {}): Relay {
 
   const server = createServer((req: IncomingMessage, res: ServerResponse) => {
     if (req.method === "GET" && req.url === "/api/health") {
-      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      // Any origin may ask: the web app checks this to decide whether to offer live sessions,
+      // and it may be hosted on a different origin from the relay.
+      res.writeHead(200, {
+        "content-type": "application/json",
+        "cache-control": "no-store",
+        "access-control-allow-origin": "*",
+      });
       res.end(JSON.stringify({ ok: true, rooms: rooms.size }));
       return;
     }

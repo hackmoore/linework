@@ -52,12 +52,21 @@ const PRESENCE_THROTTLE_MS = 50;
 const PEER_TIMEOUT_MS = 30_000;
 const PRESENCE_HEARTBEAT_MS = 10_000;
 
+const configuredRelay = (): string =>
+  (import.meta.env.VITE_LINEWORK_RELAY_URL as string | undefined)?.replace(/\/+$/, "") ?? "";
+
 /** WebSocket URL for a room: VITE_LINEWORK_RELAY_URL if set, else /api on this origin. */
 export function relayUrl(roomId: string): string {
-  const configured = (import.meta.env.VITE_LINEWORK_RELAY_URL as string | undefined)?.replace(/\/+$/, "");
+  const configured = configuredRelay();
   if (configured) return `${configured}/api/rooms/${roomId}`;
   const scheme = window.location.protocol === "https:" ? "wss" : "ws";
   return `${scheme}://${window.location.host}/api/rooms/${roomId}`;
+}
+
+/** HTTP URL of the relay's health check, which says whether live sessions can work here. */
+export function relayHealthUrl(): string {
+  const configured = configuredRelay();
+  return configured ? `${configured.replace(/^ws/, "http")}/api/health` : "/api/health";
 }
 
 class LiveSession {

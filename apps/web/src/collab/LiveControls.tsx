@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useRelayAvailability } from "./availability";
 import { liveLink, newRoomSecret } from "./crypto";
 import { ensureDisplayName, setDisplayName, useDisplayName } from "./identity";
 import { startSession, stopSession, useLive } from "./session";
@@ -10,6 +11,7 @@ export function LiveControls(): ReactElement {
   const peers = useLive((s) => s.peers);
   const error = useLive((s) => s.error);
   const name = useDisplayName();
+  const relay = useRelayAvailability();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -70,7 +72,14 @@ export function LiveControls(): ReactElement {
       <button
         type="button"
         className="btn btn--ghost btn--sm"
-        title="Edit together in real time"
+        title={
+          relay === "unavailable"
+            ? "Live sessions aren't set up on this server"
+            : relay === "checking"
+              ? "Checking for the live server..."
+              : "Edit together in real time"
+        }
+        disabled={relay !== "available"}
         onClick={() => void start()}
       >
         Share live
