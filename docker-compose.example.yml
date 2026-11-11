@@ -13,7 +13,7 @@ services:
       target: web
       args:
         LINEWORK_SITE_URL: ${LINEWORK_SITE_URL:-}
-    image: linework-web
+    image: ${LINEWORK_WEB_IMAGE:-linework-web}
     restart: unless-stopped
     depends_on:
       api:
@@ -41,7 +41,7 @@ services:
     build:
       context: .
       target: api
-    image: linework-api
+    image: ${LINEWORK_API_IMAGE:-linework-api}
     restart: unless-stopped
     environment:
       # Browsers on other sites cannot join rooms. Empty allows any origin.

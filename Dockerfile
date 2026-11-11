@@ -3,7 +3,9 @@
 #   docker build --target web .   static site served by Caddy (also proxies /api)
 #   docker build --target api .   live-collaboration relay
 
-FROM node:24-alpine AS build
+# The build stage runs on the build machine: its output is plain JavaScript, so
+# multi-platform images need no emulated builds.
+FROM --platform=$BUILDPLATFORM node:24-alpine AS build
 WORKDIR /repo
 RUN corepack enable && corepack prepare pnpm@9.9.0 --activate
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./

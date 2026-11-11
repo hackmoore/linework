@@ -86,6 +86,8 @@ Replace `traefik` with the name of the network Traefik uses. Traefik forwards We
 | `LINEWORK_SITE_URL`     | Public URL. Written into `/llms.txt` at build time, and only pages from this origin may join rooms on the relay. |
 | `HTTP_PORT`             | Host port for HTTP. Default 80.                                                                                  |
 | `HTTPS_PORT`            | Host port for HTTPS. Default 443.                                                                                |
+| `LINEWORK_WEB_IMAGE`    | Image for the web container. Default `linework-web`, built locally.                                              |
+| `LINEWORK_API_IMAGE`    | Image for the relay container. Default `linework-api`, built locally.                                            |
 
 Changing `LINEWORK_SITE_URL` needs a rebuild: `docker compose up -d --build`.
 
@@ -98,3 +100,21 @@ git pull
 docker compose up -d --build
 docker image prune -f
 ```
+
+## Prebuilt images and automatic updates
+
+Every push to `main` runs the checks, then publishes both images to GitHub Container Registry for `linux/amd64` and `linux/arm64`:
+
+- `ghcr.io/hackmoore/linework-web`
+- `ghcr.io/hackmoore/linework-api`
+
+Each image is tagged `latest` and `sha-<commit>`. To use them instead of building on the server, set these in `.env`:
+
+```sh
+LINEWORK_WEB_IMAGE=ghcr.io/hackmoore/linework-web:latest
+LINEWORK_API_IMAGE=ghcr.io/hackmoore/linework-api:latest
+```
+
+Then run `docker compose pull && docker compose up -d`. [Watchtower](https://containrrr.dev/watchtower/) or a similar tool can then pull new `latest` images as they are published.
+
+The web image has the site URL built in, so it is only right for the site it was built for. The workflow takes it from the repository variable `LINEWORK_SITE_URL` (Settings > Secrets and variables > Actions > Variables). A fork must set its own variable and publish its own images.
