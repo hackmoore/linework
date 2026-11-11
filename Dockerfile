@@ -14,9 +14,8 @@ COPY apps/api/package.json apps/api/
 COPY packages/shared/package.json packages/shared/
 RUN pnpm install --frozen-lockfile
 COPY . .
-# Public origin written into /llms.txt links, e.g. https://linework.example.com
-ARG LINEWORK_SITE_URL=""
-ENV LINEWORK_SITE_URL=${LINEWORK_SITE_URL}
+# The public site URL is filled in when the web container starts (docker/web-entrypoint.sh).
+ENV LINEWORK_SITE_URL=__LINEWORK_SITE_URL__
 RUN pnpm --filter @linework/web build
 RUN pnpm --filter @linework/api deploy --prod /out/api
 
@@ -32,4 +31,7 @@ CMD ["node", "src/main.ts"]
 
 FROM caddy:2-alpine AS web
 COPY docker/Caddyfile /etc/caddy/Caddyfile
-COPY --from=build /repo/apps/web/dist /srv
+COPY --chmod=755 docker/web-entrypoint.sh /usr/local/bin/linework-entrypoint
+COPY --from=build /repo/apps/web/dist /usr/share/linework
+ENTRYPOINT ["linework-entrypoint"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]

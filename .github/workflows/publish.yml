@@ -2,8 +2,7 @@
 # GitHub Container Registry, tagged latest and with the commit SHA.
 #   ghcr.io/<owner>/linework-web
 #   ghcr.io/<owner>/linework-api
-# Set the repository variable LINEWORK_SITE_URL to the public site URL; it is baked
-# into the web image's /llms.txt links.
+# The images work for any domain: the web container takes LINEWORK_SITE_URL when it starts.
 
 name: Publish images
 
@@ -62,6 +61,5 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args: LINEWORK_SITE_URL=${{ vars.LINEWORK_SITE_URL }}
           cache-from: type=gha,scope=${{ matrix.target }}
           cache-to: type=gha,mode=max,scope=${{ matrix.target }}

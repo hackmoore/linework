@@ -27,7 +27,6 @@ function llmsTxt(): Plugin {
 
 export default defineConfig({
   plugins: [react(), llmsTxt()],
-  define: { "import.meta.env.VITE_LINEWORK_SITE_URL": JSON.stringify(siteUrl) },
   server: {
     port: 5173,
     proxy: { "/api": { target: apiTarget, changeOrigin: true, ws: true } },

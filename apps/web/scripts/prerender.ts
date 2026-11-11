@@ -33,8 +33,15 @@ const ssrDir = join(root, "dist-ssr");
 const escapeAttr = (text: string): string =>
   text.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
 
-/** Public origin, e.g. https://linework.example. Without it, absolute URLs are left out. */
+/**
+ * Public origin, e.g. https://linework.example. Without it, absolute URLs are left out. Docker
+ * builds pass a placeholder that docker/web-entrypoint.sh replaces when the container starts.
+ */
 const siteUrl = (process.env.LINEWORK_SITE_URL ?? "").replace(/\/+$/, "");
+const siteMeta = `<meta name="linework-site-url" content="${escapeAttr(siteUrl)}" />`;
+
+const addToHead = (html: string, tags: readonly string[]): string =>
+  html.replace(/\s*<\/head>/, `\n    ${tags.join("\n    ")}\n  </head>`);
 
 function withHead(html: string, page: Page): string {
   let out = html;
@@ -53,14 +60,14 @@ function withHead(html: string, page: Page): string {
   }
   if (siteUrl) {
     const url = escapeAttr(siteUrl + page.url);
-    const tags = [
+    out = addToHead(out, [
+      siteMeta,
       `<link rel="canonical" href="${url}" />`,
       `<meta property="og:url" content="${url}" />`,
       `<meta property="og:image" content="${escapeAttr(siteUrl)}/og.png" />`,
       `<meta property="og:image:width" content="1200" />`,
       `<meta property="og:image:height" content="630" />`,
-    ];
-    out = out.replace(/\s*<\/head>/, `\n    ${tags.join("\n    ")}\n  </head>`);
+    ]);
   }
   return out;
 }
@@ -68,12 +75,12 @@ function withHead(html: string, page: Page): string {
 const shell = await readFile(join(dist, "index.html"), "utf8");
 if (!shell.includes('<div id="root"></div>')) throw new Error("dist/index.html has no empty #root");
 const { render } = (await import(pathToFileURL(join(ssrDir, "entry-server.js")).href)) as {
-  render: (url: string) => Promise<string>;
+  render: (url: string, origin: string) => Promise<string>;
 };
 
-await writeFile(join(dist, "app.html"), shell);
+await writeFile(join(dist, "app.html"), siteUrl ? addToHead(shell, [siteMeta]) : shell);
 for (const page of PAGES) {
-  const body = await render(page.url);
+  const body = await render(page.url, siteUrl);
   const html = withHead(shell, page).replace('<div id="root"></div>', `<div id="root">${body}</div>`);
   const file = join(dist, page.file);
   await mkdir(dirname(file), { recursive: true });
