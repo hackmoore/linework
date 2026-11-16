@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
 import { useRelayAvailability } from "./availability";
-import { liveLink, newRoomSecret } from "./crypto";
+import { liveLink } from "./crypto";
 import { ensureDisplayName, setDisplayName, useDisplayName } from "./identity";
-import { startSession, stopSession, useLive } from "./session";
+import { startNewSession, stopSession, useLive } from "./session";
 
 /** Header control: start a live session, see who's here, copy the link, or leave. */
 export function LiveControls(): ReactElement {
@@ -43,15 +43,7 @@ export function LiveControls(): ReactElement {
 
   const start = async (): Promise<void> => {
     if (ensureDisplayName() === null) return;
-    const room = newRoomSecret();
-    // Keep the room in this tab's URL so a reload rejoins the same session.
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `${window.location.pathname}#room=${room.roomId}&key=${room.key}`,
-    );
-    const session = await startSession(room, false);
-    session.attach();
+    const room = await startNewSession();
     setOpen(true);
     await navigator.clipboard.writeText(liveLink(window.location.origin, room)).then(
       () => {

@@ -1000,6 +1000,17 @@
   background: var(--color-surface);
   box-shadow: var(--shadow-lg);
 }
+.live__panel--wide {
+  width: min(420px, calc(100vw - 32px));
+}
+.live__prompt {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  resize: vertical;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .live__lead {
   margin: 0;
   font-size: 0.85rem;

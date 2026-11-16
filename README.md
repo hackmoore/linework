@@ -21,6 +21,7 @@ Each chart type has its own tools, layout and checks. For example, a Gantt chart
 
 - **Import and export.** Export PNG, SVG and PDF. Export or import Mermaid, CSV, MS Project XML, SQL and Markdown outlines, depending on the chart type.
 - **Live collaboration.** Edit together through a relay that only passes on end-to-end encrypted messages. The relay never sees your chart, and self-hosters can leave it out.
+- **Edit together with an AI agent.** Click Share with AI and paste the message into an agent that can run commands, such as Claude Code. The agent downloads a small client (`/linework-agent.mjs`, Node.js 22 or newer, no install) that joins the encrypted live session and sends commands to your browser: read the chart, add or change shapes, tasks and cards, replace the chart, or tidy the layout. Your tab runs each command, so you watch the changes happen and can undo them. This needs the relay.
 - **Generate with AI.** Describe a chart and Claude drafts it. You use your own Anthropic API key, which is sent only to Anthropic.
 - **Links that hold the chart.** A chart can be shared as a link with the chart inside it. Other AI assistants can create charts this way: follow the instructions at `/llms.txt`.
 - **Templates.** Every chart type has examples to start from.

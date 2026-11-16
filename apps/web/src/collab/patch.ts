@@ -42,7 +42,7 @@ const GANTT_SCALARS = [
   "calendar",
   "baseline",
 ] as const;
-type CollectionName =
+export type CollectionName =
   | "nodes"
   | "edges"
   | "layers"
@@ -59,7 +59,7 @@ type CollectionName =
   | "roadmap.items"
   | "sequence.participants"
   | "sequence.steps";
-const COLLECTIONS: readonly CollectionName[] = [
+export const COLLECTIONS: readonly CollectionName[] = [
   "nodes",
   "edges",
   "layers",
@@ -79,6 +79,15 @@ const COLLECTIONS: readonly CollectionName[] = [
 ];
 const ROADMAP_SCALARS = ["scale", "fiscalYearStart", "showToday"] as const;
 const FLOWCHART_SCALARS = ["direction", "laneStart"] as const;
+
+/** Every key a patch's `set` can change. */
+export const SETTABLE_KEYS: readonly string[] = [
+  ...SCALARS,
+  ...GANTT_SCALARS.map((k) => `gantt.${k}`),
+  ...FLOWCHART_SCALARS.map((k) => `flowchart.${k}`),
+  ...ROADMAP_SCALARS.map((k) => `roadmap.${k}`),
+  "sequence.autonumber",
+];
 
 function getCollection(d: Diagram, name: CollectionName): readonly Item[] {
   switch (name) {

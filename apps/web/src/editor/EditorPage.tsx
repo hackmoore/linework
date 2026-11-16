@@ -12,6 +12,7 @@ import { SequenceEditor } from "../sequence/SequenceEditor";
 import { SequenceInspector } from "../sequence/SequenceInspector";
 import { Canvas } from "./Canvas";
 import { ExportMenu } from "./ExportMenu";
+import { AiShareControls } from "../collab/AiShareControls";
 import { LiveControls } from "../collab/LiveControls";
 import { checkRelay } from "../collab/availability";
 import { parseRoomSecret } from "../collab/crypto";
@@ -286,6 +287,7 @@ function EditorHeader({ saveState }: { saveState: SaveState }): ReactElement {
         >
           Present
         </button>
+        <AiShareControls />
         <LiveControls />
         <ExportMenu />
       </div>

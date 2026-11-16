@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import { transformWithOxc } from "vite";
 import { defineConfig, type Plugin } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { ICONS } from "./src/library/icons.ts";
@@ -25,8 +27,31 @@ function llmsTxt(): Plugin {
   };
 }
 
+/** Serves the AI agent client (src/agent/cli.ts) as plain JavaScript at /linework-agent.mjs. */
+function agentScript(): Plugin {
+  const source = new URL("./src/agent/cli.ts", import.meta.url);
+  const build = async (): Promise<string> => {
+    const result = await transformWithOxc(await readFile(source, "utf8"), "cli.ts", { lang: "ts" });
+    return result.code;
+  };
+  return {
+    name: "linework-agent-script",
+    configureServer(server) {
+      server.middlewares.use("/linework-agent.mjs", (_req, res, next) => {
+        build().then((code) => {
+          res.setHeader("Content-Type", "text/javascript; charset=utf-8");
+          res.end(code);
+        }, next);
+      });
+    },
+    async generateBundle() {
+      this.emitFile({ type: "asset", fileName: "linework-agent.mjs", source: await build() });
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [react(), llmsTxt()],
+  plugins: [react(), llmsTxt(), agentScript()],
   server: {
     port: 5173,
     proxy: { "/api": { target: apiTarget, changeOrigin: true, ws: true } },

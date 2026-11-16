@@ -426,6 +426,18 @@ Link: ${base}/open#m=flowchart%20LR%0A%20%20A(%5BStart%5D)%20--%3E%20B%7BApprove
 5. If the link doesn't open, the page shows the parsing error. Fix the payload and send a
    new link.
 
+## Editing a chart that is open, live
+
+If the user wants you to change a chart they have open, and you can run shell commands,
+ask them to click Share with AI in the editor and paste you the message it gives. It
+contains a live link and tells you to run:
+
+    curl -fsSL ${base}/linework-agent.mjs -o linework-agent.mjs
+    node linework-agent.mjs '<live link>' help
+
+The client prints its full command reference. Your edits appear in the user's editor as you
+make them.
+
 ## About Linework
 
 Free and open source (MIT). Diagrams are stored in the user's browser. Nothing is uploaded

@@ -2,8 +2,9 @@ import { create } from "zustand";
 import type { Diagram } from "@linework/shared";
 import { useEditor } from "../editor/store";
 import { colorFor, getDisplayName } from "./identity";
-import { importRoomKey, open, seal, type RoomSecret } from "./crypto";
+import { importRoomKey, liveLink, newRoomSecret, open, seal, type RoomSecret } from "./crypto";
 import { acceptSnapshot, applyPatch, diffDiagrams, type DiagramPatch } from "./patch";
+import { runAgentCommand } from "./agent";
 
 /*
  * A live editing session. Everyone in the room keeps a full copy of the document; edits
@@ -26,7 +27,12 @@ type Message =
   | { t: "snapshot"; client: string; diagram: unknown }
   | { t: "patch"; client: string; patch: DiagramPatch }
   | { t: "presence"; client: string; name: string; cursor: PeerPresence["cursor"]; selection: string[] }
-  | { t: "bye"; client: string };
+  | { t: "bye"; client: string }
+  // An AI agent's command-line client (agent/cli.ts) looking for the tab that runs its commands.
+  | { t: "agent-hello"; client: string }
+  | { t: "agent-host"; client: string; to: string; title: string; chartType: string }
+  | { t: "agent-call"; client: string; to: string; id: string; command: unknown }
+  | { t: "agent-reply"; client: string; to: string; id: string; reply: unknown };
 
 export type LiveStatus = "idle" | "connecting" | "connected" | "reconnecting" | "error";
 
@@ -37,6 +43,8 @@ interface LiveState {
   /** Connections in the room including this one, as reported by the relay. */
   readonly connections: number;
   readonly error: string | null;
+  /** Whether this tab runs commands from AI agents in the session ("Share with AI"). */
+  readonly agentHost: boolean;
 }
 
 export const useLive = create<LiveState>()(() => ({
@@ -45,6 +53,7 @@ export const useLive = create<LiveState>()(() => ({
   peers: new Map(),
   connections: 0,
   error: null,
+  agentHost: false,
 }));
 
 const PATCH_THROTTLE_MS = 60;
@@ -156,7 +165,14 @@ class LiveSession {
     // Let the goodbye go out before closing.
     const socket = this.socket;
     setTimeout(() => socket?.close(1000, "Left session"), 50);
-    useLive.setState({ status: "idle", secret: null, peers: new Map(), connections: 0, error: null });
+    useLive.setState({
+      status: "idle",
+      secret: null,
+      peers: new Map(),
+      connections: 0,
+      error: null,
+      agentHost: false,
+    });
   }
 
   private connect(): void {
@@ -259,6 +275,48 @@ class LiveSession {
         useLive.setState({ peers });
         return;
       }
+      case "agent-hello": {
+        if (!useLive.getState().agentHost || !editor.diagram) return;
+        void this.send({
+          t: "agent-host",
+          client: this.client,
+          to: message.client,
+          title: editor.diagram.title,
+          chartType: editor.diagram.chartType,
+        });
+        return;
+      }
+      case "agent-call": {
+        if (message.to !== this.client || !editor.diagram) return;
+        if (!useLive.getState().agentHost) {
+          void this.send({
+            t: "agent-reply",
+            client: this.client,
+            to: message.client,
+            id: message.id,
+            reply: { ok: false, error: "Share with AI was turned off in the browser" },
+          });
+          return;
+        }
+        // Send our own pending edits first, so the agent's change is a separate patch.
+        this.flushPatch();
+        const outcome = runAgentCommand(editor.diagram, message.command);
+        if (outcome.ok && outcome.next) {
+          const next = outcome.next;
+          editor.commit(() => next);
+        }
+        void this.send({
+          t: "agent-reply",
+          client: this.client,
+          to: message.client,
+          id: message.id,
+          reply: outcome.ok ? outcome.reply : { ok: false, error: outcome.error },
+        });
+        return;
+      }
+      case "agent-host":
+      case "agent-reply":
+        return;
       case "bye": {
         const peers = new Map(useLive.getState().peers);
         peers.delete(message.client);
@@ -325,4 +383,29 @@ export async function startSession(secret: RoomSecret, joining: boolean): Promis
 export function stopSession(): void {
   current?.stop();
   current = null;
+}
+
+/** Turns "Share with AI" on or off for this tab. Only works during a live session. */
+export function setAgentHost(on: boolean): void {
+  useLive.setState({ agentHost: on && current !== null });
+}
+
+/** Starts a new live session for the open document and keeps the room in this tab's URL. */
+export async function startNewSession(): Promise<RoomSecret> {
+  const room = newRoomSecret();
+  // Keep the room in this tab's URL so a reload rejoins the same session.
+  window.history.replaceState(
+    window.history.state,
+    "",
+    `${window.location.pathname}#room=${room.roomId}&key=${room.key}`,
+  );
+  const session = await startSession(room, false);
+  session.attach();
+  return room;
+}
+
+/** The live link for an AI agent: the usual link, plus the relay's address when it's elsewhere. */
+export function agentLink(origin: string, secret: RoomSecret): string {
+  const link = liveLink(origin, secret);
+  return configuredRelay() ? `${link}&relay=${encodeURIComponent(relayUrl(secret.roomId))}` : link;
 }
