@@ -107,9 +107,17 @@ describe("relay", () => {
     expect(await code).toBe(CLOSE_RATE_LIMITED);
   });
 
-  it("enforces allowed origins", async () => {
+  it("enforces allowed origins for browsers and lets command-line clients in", async () => {
     const host = await start({ allowedOrigins: ["https://linework.example"] });
-    await expect(connect(host)).rejects.toThrow();
+    await expect(
+      new Promise((resolve, reject) => {
+        const ws = new WebSocket(`ws://${host}/api/rooms/${ROOM}`, { origin: "https://evil.example" });
+        ws.once("open", resolve);
+        ws.once("error", reject);
+      }),
+    ).rejects.toThrow();
+    // No Origin header: an AI agent's command-line client.
+    (await connect(host)).close();
     const ok = await new Promise<WebSocket>((resolve, reject) => {
       const ws = new WebSocket(`ws://${host}/api/rooms/${ROOM}`, { origin: "https://linework.example" });
       ws.once("open", () => {

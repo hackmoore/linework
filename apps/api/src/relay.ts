@@ -18,7 +18,11 @@ export interface RelayOptions {
   readonly maxRooms?: number;
   /** Frames per second a client may send (bursts up to twice this are allowed). */
   readonly messagesPerSecond?: number;
-  /** Allowed browser origins; empty allows any (fine for local development). */
+  /**
+   * Allowed browser origins; empty allows any (fine for local development). Connections
+   * with no Origin header (command-line AI agents, see the web app's agent/cli.ts) are
+   * always allowed: browsers always send one, so this still stops other sites' pages.
+   */
   readonly allowedOrigins?: readonly string[];
   readonly heartbeatMs?: number;
 }
@@ -78,7 +82,7 @@ export function createRelay(options: RelayOptions = {}): Relay {
   server.on("upgrade", (req, socket, head) => {
     const match = ROOM_PATH.exec(req.url ?? "");
     const origin = req.headers.origin ?? "";
-    if (!match || (allowedOrigins.size > 0 && !allowedOrigins.has(origin))) {
+    if (!match || (origin !== "" && allowedOrigins.size > 0 && !allowedOrigins.has(origin))) {
       socket.write("HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n");
       socket.destroy();
       return;
