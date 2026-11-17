@@ -662,7 +662,13 @@ function Timeline({ layout, gantt, styleId, selected }: TimelineProps): ReactEle
   };
 
   const onDoubleClick = (event: React.MouseEvent<SVGSVGElement>): void => {
-    if ((event.target as Element).closest("[data-task-id]")) return;
+    // Pointer capture makes the svg the target, so check what is really under the pointer.
+    if (
+      (document.elementFromPoint(event.clientX, event.clientY) ?? (event.target as Element)).closest(
+        "[data-task-id]",
+      )
+    )
+      return;
     const p = localPoint(event);
     const row = rowAt(layout, p.y);
     const sectionId =

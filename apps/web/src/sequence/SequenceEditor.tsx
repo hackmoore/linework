@@ -232,7 +232,8 @@ export function SequenceEditor(): ReactElement | null {
   };
 
   const onDoubleClick = (event: React.MouseEvent<SVGSVGElement>): void => {
-    const target = event.target as Element;
+    // Pointer capture makes the svg the target, so check what is really under the pointer.
+    const target = document.elementFromPoint(event.clientX, event.clientY) ?? (event.target as Element);
     const id =
       target.closest("[data-participant-id]")?.getAttribute("data-participant-id") ??
       target.closest("[data-step-id]")?.getAttribute("data-step-id");

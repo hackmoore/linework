@@ -382,10 +382,13 @@ export function Canvas(): ReactElement | null {
 
   const onDoubleClick = (event: React.MouseEvent<SVGSVGElement>): void => {
     const state = useEditor.getState();
-    if (state.tool !== "select") return;
-    const target = event.target as Element;
-    const nodeId = target.closest("[data-node-id]")?.getAttribute("data-node-id");
+    if (state.tool !== "select" || !state.diagram) return;
+    // Pointer capture (taken on pointer down) makes the svg the event target, so look up
+    // what is actually under the pointer.
+    const target = document.elementFromPoint(event.clientX, event.clientY) ?? (event.target as Element);
+    const p = toDiagram(event.clientX, event.clientY);
     const edgeId = target.closest("[data-edge-id]")?.getAttribute("data-edge-id");
+    const nodeId = edgeId ? null : (nodeAt(state.diagram, p)?.id ?? null);
     if (nodeId) {
       state.select({ nodeIds: [nodeId] });
       state.startEditing({ nodeId });
@@ -393,7 +396,6 @@ export function Canvas(): ReactElement | null {
       state.select({ edgeIds: [edgeId] });
       state.startEditing({ edgeId });
     } else {
-      const p = toDiagram(event.clientX, event.clientY);
       const id = state.addNode("text", snap(p.x, true), snap(p.y, true));
       state.startEditing({ nodeId: id });
     }

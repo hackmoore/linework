@@ -271,7 +271,13 @@ function Timeline({ layout, roadmap, styleId, selected }: TimelineProps): ReactE
   };
 
   const onDoubleClick = (event: React.MouseEvent<SVGSVGElement>): void => {
-    if ((event.target as Element).closest("[data-item-id]")) return;
+    // Pointer capture makes the svg the target, so check what is really under the pointer.
+    if (
+      (document.elementFromPoint(event.clientX, event.clientY) ?? (event.target as Element)).closest(
+        "[data-item-id]",
+      )
+    )
+      return;
     const p = localPoint(event);
     const lane = laneAtY(layout, p.y);
     addItem("item", {
