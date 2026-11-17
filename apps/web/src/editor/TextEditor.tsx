@@ -10,6 +10,9 @@ interface TextEditorProps {
   readonly textAlign: TextAlign;
   /** Where the text sits in the box, matching the label on the canvas. */
   readonly verticalAlign?: VerticalAlign;
+  readonly bold?: boolean;
+  readonly italic?: boolean;
+  readonly underline?: boolean;
   readonly color: string;
   readonly opaque?: boolean;
   /** Called with the new text, or null when editing was cancelled. */
@@ -23,6 +26,9 @@ export function TextEditor({
   fontSize,
   textAlign,
   verticalAlign = "top",
+  bold = false,
+  italic = false,
+  underline = false,
   color,
   opaque = false,
   onDone,
@@ -61,6 +67,9 @@ export function TextEditor({
         height,
         ...(paddingTop === undefined ? {} : { paddingTop }),
         fontSize,
+        fontWeight: bold ? 700 : undefined,
+        fontStyle: italic ? "italic" : undefined,
+        textDecoration: underline ? "underline" : undefined,
         textAlign,
         color,
       }}

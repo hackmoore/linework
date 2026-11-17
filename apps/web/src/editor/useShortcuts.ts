@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { copySelection, cutSelection, paste } from "./clipboard";
-import { useEditor } from "./store";
+import { toggleTextStyle, useEditor } from "./store";
 import { useUi } from "./ui";
 import { kindUi } from "../kinds/ui";
 import { toolsFor } from "./ToolPalette";
@@ -67,6 +67,9 @@ export function useShortcuts(getCanvasSize: () => { width: number; height: numbe
         else if ((key === "z" && event.shiftKey) || key === "y") state.redo();
         else if (key === "a") state.selectAll();
         else if (key === "d") state.duplicateSelection();
+        else if (key === "b" && state.selection.nodeIds.length > 0) toggleTextStyle("bold");
+        else if (key === "i" && state.selection.nodeIds.length > 0) toggleTextStyle("italic");
+        else if (key === "u" && state.selection.nodeIds.length > 0) toggleTextStyle("underline");
         else if (key === "0") fitToContent(getCanvasSize());
         else if (key === "=" || key === "+") zoomBy(1.2, getCanvasSize());
         else if (key === "-") zoomBy(1 / 1.2, getCanvasSize());

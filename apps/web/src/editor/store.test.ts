@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { parseDiagram } from "@linework/shared";
 import { createDiagram } from "../diagram/factory";
-import { useEditor } from "./store";
+import { toggleTextStyle, useEditor } from "./store";
 
 const state = (): ReturnType<typeof useEditor.getState> => useEditor.getState();
 
@@ -96,6 +96,19 @@ describe("editor store", () => {
     state().reorderSelection("front");
     expect(diagram().nodes.map((n) => n.id)).toEqual([a, b]);
     expect(diagram().nodes[1]).not.toHaveProperty("behindLines");
+  });
+
+  it("toggles bold, italic and underline across the selection", () => {
+    const a = state().addNode("rectangle", 0, 0);
+    const b = state().addNode("rectangle", 10, 10);
+    state().updateNodes([a], { bold: true });
+    state().select({ nodeIds: [a, b] });
+    toggleTextStyle("bold");
+    expect(diagram().nodes.map((n) => n.bold)).toEqual([true, true]);
+    toggleTextStyle("bold");
+    expect(diagram().nodes.map((n) => n.bold)).toEqual([false, false]);
+    toggleTextStyle("underline");
+    expect(diagram().nodes.every((n) => n.underline === true)).toBe(true);
   });
 
   it("ignores no-op title changes", () => {

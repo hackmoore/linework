@@ -1105,3 +1105,29 @@
   stroke: var(--color-accent);
   cursor: grab;
 }
+
+/* Bold, italic and underline toggles */
+.text-style {
+  gap: 4px;
+  margin-bottom: 0.5rem;
+}
+.text-style .text-style__btn {
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+.text-style .text-style__btn--bold {
+  font-weight: 800;
+}
+.text-style .text-style__btn--italic {
+  font-style: italic;
+  font-family: Georgia, serif;
+}
+.text-style .text-style__btn--underline {
+  text-decoration: underline;
+}
+.text-style .text-style__btn--on {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}

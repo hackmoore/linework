@@ -435,3 +435,13 @@ export const useEditor = create<EditorState>()((set, get) => ({
     get().commit((d) => (d.background === background ? d : { ...d, background }));
   },
 }));
+
+/** Turns bold, italic or underline on for the selected shapes, or off if they all have it. */
+export function toggleTextStyle(key: "bold" | "italic" | "underline"): void {
+  const state = useEditor.getState();
+  const ids = state.selection.nodeIds;
+  const nodes = state.diagram?.nodes.filter((n) => ids.includes(n.id)) ?? [];
+  if (nodes.length === 0) return;
+  const on = !nodes.every((n) => n[key] === true);
+  state.updateNodes(ids, { [key]: on });
+}

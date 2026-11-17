@@ -32,7 +32,7 @@ import { FlowchartSettings, FlowStepSection } from "../flowchart/FlowchartPanel"
 import { EntitySection, LinkSection, NetworkSettings } from "../network/NetworkPanel";
 import { kindModel } from "../kinds/registry";
 import { kindUi } from "../kinds/ui";
-import { editableLayerIds, useEditor } from "./store";
+import { editableLayerIds, toggleTextStyle, useEditor } from "./store";
 
 const SWATCHES = ["#1f2937", "#1a56db", "#1e7e34", "#b45309", "#b91c1c", "#6d28d9", "#ffffff"];
 const FILL_SWATCHES = [
@@ -273,6 +273,7 @@ function NodeInspector({ nodes }: { nodes: readonly DiagramNode[] }): ReactEleme
             }}
           />
         </div>
+        <TextStyleButtons nodes={nodes} />
         <SelectField
           label="Vertical"
           value={common(
@@ -668,6 +669,39 @@ function commonAnchor(
 ): EdgeAnchor | null | undefined {
   const first = edges[0]?.[key] ?? null;
   return edges.every((e) => (e[key] ?? null) === first) ? first : undefined;
+}
+
+const TEXT_STYLES = [
+  ["bold", "Bold", "B"],
+  ["italic", "Italic", "I"],
+  ["underline", "Underline", "U"],
+] as const;
+
+/** Bold, italic and underline toggles for the selected shapes' labels. */
+function TextStyleButtons({ nodes }: { nodes: readonly DiagramNode[] }): ReactElement {
+  const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘" : "Ctrl+";
+  return (
+    <div className="icon-row text-style" role="group" aria-label="Text style">
+      {TEXT_STYLES.map(([key, label, letter]) => {
+        const on = nodes.every((n) => n[key] === true);
+        return (
+          <button
+            key={key}
+            type="button"
+            className={`icon-btn icon-btn--lg text-style__btn text-style__btn--${key}${on ? " text-style__btn--on" : ""}`}
+            aria-pressed={on}
+            aria-label={label}
+            title={`${label} (${mod}${letter})`}
+            onClick={() => {
+              toggleTextStyle(key);
+            }}
+          >
+            {letter}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function EdgeInspector({ edges }: { edges: readonly DiagramEdge[] }): ReactElement {

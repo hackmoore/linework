@@ -801,6 +801,9 @@ function NodeTextEditor({ nodeId }: { nodeId: string }): ReactElement | null {
       fontSize={node.fontSize * viewport.zoom}
       textAlign={node.textAlign}
       verticalAlign={verticalAlignOf(node)}
+      bold={node.bold === true}
+      italic={node.italic === true}
+      underline={node.underline === true}
       color={node.textColor}
       box={{
         x: (node.x - viewport.x) * viewport.zoom,

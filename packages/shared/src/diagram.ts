@@ -155,6 +155,10 @@ export const nodeSchema = z.object({
   textAlign: z.enum(TEXT_ALIGNS),
   /** Where the label sits from top to bottom. Absent: top for containers, middle otherwise. */
   verticalAlign: z.enum(VERTICAL_ALIGNS).optional(),
+  /** Label styling for the whole label. */
+  bold: z.boolean().optional(),
+  italic: z.boolean().optional(),
+  underline: z.boolean().optional(),
   /** Drawn behind connectors, like a container. Set by Send to back. */
   behindLines: z.boolean().optional(),
   /** Library icon id for "icon" nodes; null otherwise. */

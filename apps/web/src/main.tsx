@@ -4,6 +4,8 @@ import { BrowserRouter } from "react-router";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/600.css";
 import "@fontsource/inter/700.css";
+import "@fontsource/inter/400-italic.css";
+import "@fontsource/inter/700-italic.css";
 import "@fontsource/kalam/400.css";
 import "@fontsource/kalam/700.css";
 import "./styles/global.css";

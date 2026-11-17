@@ -1,5 +1,8 @@
 import interRegular from "@fontsource/inter/files/inter-latin-400-normal.woff2?url";
 import interSemibold from "@fontsource/inter/files/inter-latin-600-normal.woff2?url";
+import interBold from "@fontsource/inter/files/inter-latin-700-normal.woff2?url";
+import interItalic from "@fontsource/inter/files/inter-latin-400-italic.woff2?url";
+import interBoldItalic from "@fontsource/inter/files/inter-latin-700-italic.woff2?url";
 import kalamRegular from "@fontsource/kalam/files/kalam-latin-400-normal.woff2?url";
 import kalamBold from "@fontsource/kalam/files/kalam-latin-700-normal.woff2?url";
 import { getStyle } from "../diagram/styles";
@@ -7,6 +10,7 @@ import { getStyle } from "../diagram/styles";
 interface FontFile {
   readonly family: string;
   readonly weight: number;
+  readonly italic?: boolean;
   readonly url: string;
 }
 
@@ -14,6 +18,9 @@ const FONTS: Readonly<Record<"professional" | "sketch", readonly FontFile[]>> = 
   professional: [
     { family: "Inter", weight: 400, url: interRegular },
     { family: "Inter", weight: 600, url: interSemibold },
+    { family: "Inter", weight: 700, url: interBold },
+    { family: "Inter", weight: 400, italic: true, url: interItalic },
+    { family: "Inter", weight: 700, italic: true, url: interBoldItalic },
   ],
   sketch: [
     { family: "Kalam", weight: 400, url: kalamRegular },
@@ -45,7 +52,7 @@ export function embeddedFontCss(styleId: string): Promise<string> {
     pending = Promise.all(
       FONTS[key].map(
         async (font) =>
-          `@font-face{font-family:"${font.family}";font-weight:${String(font.weight)};font-style:normal;src:url(${await toDataUrl(font.url)}) format("woff2");}`,
+          `@font-face{font-family:"${font.family}";font-weight:${String(font.weight)};font-style:${font.italic ? "italic" : "normal"};src:url(${await toDataUrl(font.url)}) format("woff2");}`,
       ),
     ).then((rules) => rules.join(""));
     // Don't cache failures; a later export can retry.

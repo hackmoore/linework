@@ -234,7 +234,8 @@ function NodeLabel({ node, style, halo }: LabelProps): ReactElement | null {
   const maxWidth = LABEL_BELOW.has(node.kind)
     ? Math.max(160, node.width)
     : Math.max(10, node.width - TEXT_PADDING * 2);
-  const lines = wrapText(node.label, maxWidth, node.fontSize);
+  // Bold text runs wider, so wrap it a little sooner.
+  const lines = wrapText(node.label, node.bold ? maxWidth / 1.08 : maxWidth, node.fontSize);
   const lineHeight = node.fontSize * LINE_HEIGHT;
   const anchor = node.textAlign === "left" ? "start" : node.textAlign === "right" ? "end" : "middle";
   const x =
@@ -263,7 +264,9 @@ function NodeLabel({ node, style, halo }: LabelProps): ReactElement | null {
       fill={node.textColor}
       fontSize={node.fontSize}
       fontFamily={style.fontFamily}
-      fontWeight={node.kind === "container" ? 600 : 400}
+      fontWeight={node.bold ? 700 : node.kind === "container" ? 600 : 400}
+      fontStyle={node.italic ? "italic" : undefined}
+      textDecoration={node.underline ? "underline" : undefined}
       textAnchor={anchor}
       dominantBaseline="central"
       style={{ whiteSpace: "pre" }}
