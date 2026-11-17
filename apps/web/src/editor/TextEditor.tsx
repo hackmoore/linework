@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactElement } from "react";
-import type { TextAlign } from "@linework/shared";
+import type { TextAlign, VerticalAlign } from "@linework/shared";
 import type { Rect } from "../render/geometry";
 
 interface TextEditorProps {
@@ -8,6 +8,8 @@ interface TextEditorProps {
   readonly box: Rect;
   readonly fontSize: number;
   readonly textAlign: TextAlign;
+  /** Where the text sits in the box, matching the label on the canvas. */
+  readonly verticalAlign?: VerticalAlign;
   readonly color: string;
   readonly opaque?: boolean;
   /** Called with the new text, or null when editing was cancelled. */
@@ -20,6 +22,7 @@ export function TextEditor({
   box,
   fontSize,
   textAlign,
+  verticalAlign = "top",
   color,
   opaque = false,
   onDone,
@@ -39,6 +42,12 @@ export function TextEditor({
     onDone(text);
   };
 
+  // A textarea always starts at the top, so pad it to put the text where the label sits.
+  const height = Math.max(box.height, fontSize * 1.6);
+  const textHeight = value.split("\n").length * fontSize * 1.3;
+  const room = Math.max(0, height - textHeight - 8);
+  const paddingTop = verticalAlign === "middle" ? room / 2 : verticalAlign === "bottom" ? room : undefined;
+
   return (
     <textarea
       ref={ref}
@@ -49,7 +58,8 @@ export function TextEditor({
         left: box.x,
         top: box.y,
         width: Math.max(box.width, 60),
-        height: Math.max(box.height, fontSize * 1.6),
+        height,
+        ...(paddingTop === undefined ? {} : { paddingTop }),
         fontSize,
         textAlign,
         color,

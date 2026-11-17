@@ -75,6 +75,8 @@ Editing
   cloud, actor, icon, terminal (start/end), subroutine, table, class, initial, final,
   person. New shapes without x and y are
   placed beside the chart; run tidy afterwards to lay everything out.
+  A shape's "verticalAlign" (top, middle or bottom) places its label; "textAlign" (left,
+  center or right) sets it across.
   A connector's "sourceAnchor" and "targetAnchor" fix where each end attaches: top-start,
   top, top-end, right-start, right, right-end, bottom-start, bottom, bottom-end, left-start,
   left or left-end ("start" is a quarter of the way along from the left or top). Leave

@@ -6,12 +6,14 @@ import {
   SHAPE_KINDS,
   STROKE_PATTERNS,
   TEXT_ALIGNS,
+  VERTICAL_ALIGNS,
   type Diagram,
   type DiagramEdge,
   type DiagramNode,
   type EdgeAnchor,
 } from "@linework/shared";
 import { DIAGRAM_STYLES, STYLE_IDS } from "../diagram/styles";
+import { verticalAlignOf } from "../render/DiagramSvg";
 import { ICONS } from "../library/icons";
 import { saveShape } from "../library/savedShapes";
 import {
@@ -271,6 +273,17 @@ function NodeInspector({ nodes }: { nodes: readonly DiagramNode[] }): ReactEleme
             }}
           />
         </div>
+        <SelectField
+          label="Vertical"
+          value={common(
+            nodes.map((n) => ({ v: verticalAlignOf(n) })),
+            "v",
+          )}
+          options={VERTICAL_ALIGNS}
+          onChange={(verticalAlign) => {
+            update({ verticalAlign });
+          }}
+        />
       </Section>
       {nodes.length > 1 && <AlignSection nodes={nodes} />}
       <Section title="Arrange">

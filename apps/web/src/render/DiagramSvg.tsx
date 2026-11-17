@@ -6,7 +6,9 @@ import type {
   DiagramEdge,
   DiagramNode,
   FlowDirection,
+  ShapeKind,
   StrokePattern,
+  VerticalAlign,
 } from "@linework/shared";
 import { getStyle, type DiagramStyle } from "../diagram/styles";
 import { kindModel } from "../kinds/registry";
@@ -135,6 +137,24 @@ export function contrastText(background: string): string {
 /** Shapes whose label sits underneath them rather than inside. */
 const LABEL_BELOW = new Set(["actor", "initial", "final"]);
 
+/** A label's vertical position, filling in each kind's default. */
+export function verticalAlignOf(node: Pick<DiagramNode, "kind" | "verticalAlign">): VerticalAlign {
+  return node.verticalAlign ?? (node.kind === "container" ? "top" : "middle");
+}
+
+/**
+ * Extra space above and below a top- or bottom-aligned label, as a share of the height, so
+ * the text stays inside shapes that narrow towards their ends.
+ */
+const END_INSET: Partial<Record<ShapeKind, number>> = {
+  diamond: 0.22,
+  ellipse: 0.12,
+  hexagon: 0.05,
+  triangle: 0.3,
+  cloud: 0.15,
+  cylinder: 0.2,
+};
+
 /**
  * A title with an optional subtitle and description underneath (from `meta`), centred in the
  * shape. Used by C4 elements and org chart cards.
@@ -223,17 +243,21 @@ function NodeLabel({ node, style, halo }: LabelProps): ReactElement | null {
       : node.textAlign === "right"
         ? node.x + node.width - TEXT_PADDING
         : node.x + node.width / 2;
-  // Containers label their top edge; figures and icons label underneath; everything else centres.
+  // Figures and icons label underneath; other labels sit at the top, middle or bottom.
+  const vertical = verticalAlignOf(node);
+  const inset = TEXT_PADDING + node.height * (END_INSET[node.kind] ?? 0);
   const firstY =
-    node.kind === "container"
-      ? node.y + TEXT_PADDING + lineHeight / 2
-      : node.kind === "actor"
-        ? node.y + node.height * 0.8 + lineHeight / 2
-        : node.kind === "initial" || node.kind === "final"
-          ? node.y + node.height + 4 + lineHeight / 2
-          : node.kind === "icon"
-            ? node.y + iconSize(node) + 6 + lineHeight / 2
-            : node.y + node.height / 2 - ((lines.length - 1) * lineHeight) / 2;
+    node.kind === "actor"
+      ? node.y + node.height * 0.8 + lineHeight / 2
+      : node.kind === "initial" || node.kind === "final"
+        ? node.y + node.height + 4 + lineHeight / 2
+        : node.kind === "icon"
+          ? node.y + iconSize(node) + 6 + lineHeight / 2
+          : vertical === "top"
+            ? node.y + inset + lineHeight / 2
+            : vertical === "bottom"
+              ? node.y + node.height - inset - (lines.length - 0.5) * lineHeight
+              : node.y + node.height / 2 - ((lines.length - 1) * lineHeight) / 2;
   const text = (
     <text
       fill={node.textColor}

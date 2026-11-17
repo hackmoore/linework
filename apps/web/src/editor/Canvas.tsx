@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
 import type { Diagram, DiagramEdge, DiagramNode, EdgeAnchor } from "@linework/shared";
 import { defaultSize } from "../diagram/factory";
-import { DiagramContent, visibleNodesInOrder } from "../render/DiagramSvg";
+import { DiagramContent, verticalAlignOf, visibleNodesInOrder } from "../render/DiagramSvg";
 import {
   anchorAttachment,
   anchorPoints,
@@ -800,6 +800,7 @@ function NodeTextEditor({ nodeId }: { nodeId: string }): ReactElement | null {
       initial={node.label}
       fontSize={node.fontSize * viewport.zoom}
       textAlign={node.textAlign}
+      verticalAlign={verticalAlignOf(node)}
       color={node.textColor}
       box={{
         x: (node.x - viewport.x) * viewport.zoom,

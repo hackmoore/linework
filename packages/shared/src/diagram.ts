@@ -116,6 +116,8 @@ export type EdgeRouting = (typeof EDGE_ROUTINGS)[number];
 
 export const TEXT_ALIGNS = ["left", "center", "right"] as const;
 export type TextAlign = (typeof TEXT_ALIGNS)[number];
+export const VERTICAL_ALIGNS = ["top", "middle", "bottom"] as const;
+export type VerticalAlign = (typeof VERTICAL_ALIGNS)[number];
 
 export const STROKE_PATTERNS = ["solid", "dashed", "dotted"] as const;
 export type StrokePattern = (typeof STROKE_PATTERNS)[number];
@@ -151,6 +153,8 @@ export const nodeSchema = z.object({
   textColor: hexColor,
   fontSize: finite.min(6).max(200),
   textAlign: z.enum(TEXT_ALIGNS),
+  /** Where the label sits from top to bottom. Absent: top for containers, middle otherwise. */
+  verticalAlign: z.enum(VERTICAL_ALIGNS).optional(),
   /** Library icon id for "icon" nodes; null otherwise. */
   icon: z.string().max(64).nullable(),
   layerId: id,
