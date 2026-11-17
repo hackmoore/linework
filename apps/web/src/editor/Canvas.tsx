@@ -41,7 +41,15 @@ type Handle = "nw" | "ne" | "sw" | "se";
 
 type Gesture =
   | { type: "pan"; startClient: Point; startViewport: Viewport }
-  | { type: "move"; start: Point; origins: Map<string, Point>; started: boolean; guides: GuideLine[] }
+  | {
+      type: "move";
+      start: Point;
+      origins: Map<string, Point>;
+      started: boolean;
+      guides: GuideLine[];
+      /** A plain click on a shape already in a bigger selection: select just it, unless dragged. */
+      narrowTo?: string;
+    }
   | { type: "resize"; nodeId: string; handle: Handle; origin: DiagramNode; start: Point; started: boolean }
   | { type: "marquee"; start: Point; current: Point; additive: boolean }
   | {
@@ -180,6 +188,8 @@ export function Canvas(): ReactElement | null {
     }
 
     const target = event.target as Element;
+    // Shift, Cmd or Ctrl adds to the selection (or takes a clicked item out of it).
+    const additive = event.shiftKey || event.metaKey || event.ctrlKey;
     const edgeEnd = target.closest("[data-edge-end]");
     const endEdgeId = edgeEnd?.getAttribute("data-edge-end-id");
     if (edgeEnd && endEdgeId) {
@@ -230,7 +240,7 @@ export function Canvas(): ReactElement | null {
     if (nodeId) {
       const already = state.selection.nodeIds.includes(nodeId);
       let nodeIds: readonly string[];
-      if (event.shiftKey) {
+      if (additive) {
         nodeIds = already
           ? state.selection.nodeIds.filter((id) => id !== nodeId)
           : [...state.selection.nodeIds, nodeId];
@@ -251,12 +261,20 @@ export function Canvas(): ReactElement | null {
       }
       const origins = new Map<string, Point>();
       for (const n of current.nodes) if (moving.has(n.id)) origins.set(n.id, { x: n.x, y: n.y });
-      updateGesture({ type: "move", start: p, origins, started: false, guides: [] });
+      const narrow = !additive && already && nodeIds.length + state.selection.edgeIds.length > 1;
+      updateGesture({
+        type: "move",
+        start: p,
+        origins,
+        started: false,
+        guides: [],
+        ...(narrow ? { narrowTo: nodeId } : {}),
+      });
       return;
     }
 
     if (edgeId) {
-      if (event.shiftKey) {
+      if (additive) {
         const has = state.selection.edgeIds.includes(edgeId);
         state.select({
           nodeIds: state.selection.nodeIds,
@@ -270,8 +288,8 @@ export function Canvas(): ReactElement | null {
       return;
     }
 
-    if (!event.shiftKey) state.clearSelection();
-    updateGesture({ type: "marquee", start: p, current: p, additive: event.shiftKey });
+    if (!additive) state.clearSelection();
+    updateGesture({ type: "marquee", start: p, current: p, additive });
   };
 
   const onPointerMove = (event: PointerEvent<SVGSVGElement>): void => {
@@ -405,6 +423,9 @@ export function Canvas(): ReactElement | null {
         if (rect.width > 2 || rect.height > 2) state.selectInRect(rect, g.additive);
         return;
       }
+      case "move":
+        if (!g.started && g.narrowTo) state.select({ nodeIds: [g.narrowTo] });
+        return;
       case "connect":
         if (g.targetId) state.connect(g.sourceId, g.targetId, { targetAnchor: g.targetAnchor ?? undefined });
         return;

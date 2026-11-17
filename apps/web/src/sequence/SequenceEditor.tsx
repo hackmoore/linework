@@ -190,7 +190,7 @@ export function SequenceEditor(): ReactElement | null {
       state.clearSelection();
       return;
     }
-    if (event.shiftKey) {
+    if (event.shiftKey || event.metaKey || event.ctrlKey) {
       const ids = state.selection.taskIds;
       state.select({ taskIds: ids.includes(id) ? ids.filter((i) => i !== id) : [...ids, id] });
       return;

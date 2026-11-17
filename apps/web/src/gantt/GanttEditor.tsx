@@ -435,7 +435,7 @@ function TaskTable({
             className={`gantt-row${isSelected ? " gantt-row--selected" : ""}${drag?.taskId === task.id ? " gantt-row--dragging" : ""}`}
             style={{ height: ROW_HEIGHT }}
             onPointerDown={(event) => {
-              select(task.id, event.shiftKey || event.metaKey);
+              select(task.id, event.shiftKey || event.metaKey || event.ctrlKey);
             }}
           >
             <span
@@ -589,7 +589,7 @@ function Timeline({ layout, gantt, styleId, selected }: TimelineProps): ReactEle
       state.clearSelection();
       return;
     }
-    if (event.shiftKey) {
+    if (event.shiftKey || event.metaKey || event.ctrlKey) {
       const current = state.selection.taskIds;
       state.select({
         taskIds: current.includes(task.id) ? current.filter((t) => t !== task.id) : [...current, task.id],
