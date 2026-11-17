@@ -1,4 +1,10 @@
-import type { DiagramEdge, DiagramNode, ShapeKind } from "@linework/shared";
+import {
+  EDGE_ANCHORS,
+  type DiagramEdge,
+  type DiagramNode,
+  type EdgeAnchor,
+  type ShapeKind,
+} from "@linework/shared";
 
 export interface Point {
   readonly x: number;
@@ -223,6 +229,135 @@ function attachBox(node: DiagramNode): DiagramNode {
   return { ...node, kind: "rectangle", x: node.x + (node.width - size) / 2, width: size, height: size };
 }
 
+type Side = "top" | "right" | "bottom" | "left";
+
+const SIDE_NORMAL: Record<Side, Point> = {
+  top: { x: 0, y: -1 },
+  right: { x: 1, y: 0 },
+  bottom: { x: 0, y: 1 },
+  left: { x: -1, y: 0 },
+};
+
+/** How far along its side each anchor sits: start, centre or end. */
+const ANCHOR_FRACTION = { start: 0.25, "": 0.5, end: 0.75 } as const;
+
+/** Where an anchored connector end meets the shape, and the way it leaves it. */
+export interface Attachment {
+  readonly point: Point;
+  readonly dir: Point;
+}
+
+function sideOf(anchor: EdgeAnchor): Side {
+  return anchor.split("-")[0] as Side;
+}
+
+/** The point on a shape for a fixed anchor, on the outline, and the side's outward direction. */
+export function anchorAttachment(node: DiagramNode, anchor: EdgeAnchor): Attachment {
+  const box = attachBox(node);
+  const side = sideOf(anchor);
+  const fraction = ANCHOR_FRACTION[(anchor.split("-")[1] ?? "") as keyof typeof ANCHOR_FRACTION];
+  const onBox =
+    side === "top" || side === "bottom"
+      ? { x: box.x + box.width * fraction, y: side === "top" ? box.y : box.y + box.height }
+      : { x: side === "left" ? box.x : box.x + box.width, y: box.y + box.height * fraction };
+  return { point: boundaryPoint(box, onBox), dir: SIDE_NORMAL[side] };
+}
+
+/** Every anchor on a shape with its point, for drawing snap targets. */
+export function anchorPoints(node: DiagramNode): { anchor: EdgeAnchor; point: Point }[] {
+  return EDGE_ANCHORS.map((anchor) => ({ anchor, point: anchorAttachment(node, anchor).point }));
+}
+
+/** The anchor nearest a point, if it is within `radius`. */
+export function nearestAnchor(node: DiagramNode, p: Point, radius: number): EdgeAnchor | null {
+  let best: EdgeAnchor | null = null;
+  let bestDistance = radius;
+  for (const { anchor, point } of anchorPoints(node)) {
+    const distance = Math.hypot(point.x - p.x, point.y - p.y);
+    if (distance <= bestDistance) {
+      best = anchor;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
+
+/** The side of a shape that faces a point, used for the automatic end of a half-anchored connector. */
+function facingSide(node: DiagramNode, toward: Point): Side {
+  const c = center(node);
+  const dx = (toward.x - c.x) / Math.max(1, node.width);
+  const dy = (toward.y - c.y) / Math.max(1, node.height);
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "right" : "left";
+  return dy >= 0 ? "bottom" : "top";
+}
+
+/** Space a connector runs straight out of a shape before it turns. */
+const STUB = 20;
+
+/**
+ * Elbow route between two attachments: it leaves each shape straight out of its side and
+ * turns as few times as it can.
+ */
+function orthogonalRoute(s: Attachment, t: Attachment): Point[] {
+  const a = s.point;
+  const b = t.point;
+  const a1 = { x: a.x + s.dir.x * STUB, y: a.y + s.dir.y * STUB };
+  const b1 = { x: b.x + t.dir.x * STUB, y: b.y + t.dir.y * STUB };
+  const ahead = (from: Point, dir: Point, to: Point): number =>
+    (to.x - from.x) * dir.x + (to.y - from.y) * dir.y;
+  const sHorizontal = s.dir.x !== 0;
+  const tHorizontal = t.dir.x !== 0;
+  if (sHorizontal && tHorizontal) {
+    const midX = (a1.x + b1.x) / 2;
+    if (ahead(a, s.dir, { x: midX, y: a.y }) >= STUB && ahead(b, t.dir, { x: midX, y: b.y }) >= STUB)
+      return dedupe([a, { x: midX, y: a.y }, { x: midX, y: b.y }, b]);
+    const midY = (a1.y + b1.y) / 2;
+    return dedupe([a, a1, { x: a1.x, y: midY }, { x: b1.x, y: midY }, b1, b]);
+  }
+  if (!sHorizontal && !tHorizontal) {
+    const midY = (a1.y + b1.y) / 2;
+    if (ahead(a, s.dir, { x: a.x, y: midY }) >= STUB && ahead(b, t.dir, { x: b.x, y: midY }) >= STUB)
+      return dedupe([a, { x: a.x, y: midY }, { x: b.x, y: midY }, b]);
+    const midX = (a1.x + b1.x) / 2;
+    return dedupe([a, a1, { x: midX, y: a1.y }, { x: midX, y: b1.y }, b1, b]);
+  }
+  // One end leaves sideways and the other up or down: one corner, if it lies ahead of both.
+  const corner = sHorizontal ? { x: b.x, y: a.y } : { x: a.x, y: b.y };
+  if (ahead(a, s.dir, corner) > 0 && ahead(b, t.dir, corner) > 0) return dedupe([a, corner, b]);
+  const turn = sHorizontal ? { x: a1.x, y: b1.y } : { x: b1.x, y: a1.y };
+  return dedupe([a, a1, turn, b1, b]);
+}
+
+/** Points for a connector with at least one fixed anchor. */
+function anchoredPoints(
+  routing: DiagramEdge["routing"],
+  source: DiagramNode,
+  target: DiagramNode,
+  sourceAnchor: EdgeAnchor | undefined,
+  targetAnchor: EdgeAnchor | undefined,
+): Point[] {
+  const fixedS = sourceAnchor && anchorAttachment(source, sourceAnchor);
+  const fixedT = targetAnchor && anchorAttachment(target, targetAnchor);
+  if (routing === "straight") {
+    const sp = fixedS?.point ?? boundaryPoint(attachBox(source), fixedT?.point ?? center(target));
+    const tp = fixedT?.point ?? boundaryPoint(attachBox(target), sp);
+    return [sp, tp];
+  }
+  // The automatic end uses the middle of whichever side faces the fixed end.
+  const s = fixedS ?? anchorAttachment(source, facingSide(source, fixedT?.point ?? center(target)));
+  const t = fixedT ?? anchorAttachment(target, facingSide(target, s.point));
+  if (routing === "curved") {
+    const pull = Math.max(30, Math.hypot(t.point.x - s.point.x, t.point.y - s.point.y) * 0.4);
+    return [
+      s.point,
+      { x: s.point.x + s.dir.x * pull, y: s.point.y + s.dir.y * pull },
+      { x: t.point.x + t.dir.x * pull, y: t.point.y + t.dir.y * pull },
+      t.point,
+    ];
+  }
+  return orthogonalRoute(s, t);
+}
+
 /** Space between a looping connector and the shapes it goes around. */
 const LOOP_GAP = 28;
 
@@ -270,13 +405,15 @@ function loopPoints(source: DiagramNode, target: DiagramNode, flow: "TB" | "LR")
  * links that go back against it are routed around the side as loops.
  */
 export function edgePoints(
-  edge: Pick<DiagramEdge, "routing">,
+  edge: Pick<DiagramEdge, "routing" | "sourceAnchor" | "targetAnchor">,
   source: DiagramNode,
   target: DiagramNode,
   flow?: "TB" | "LR",
   /** Which way elbow connectors leave their source, when a chart type fixes it (org charts). */
   axis?: "TB" | "LR",
 ): Point[] {
+  if (edge.sourceAnchor || edge.targetAnchor)
+    return anchoredPoints(edge.routing, source, target, edge.sourceAnchor, edge.targetAnchor);
   source = attachBox(source);
   target = attachBox(target);
   if (source.id === target.id) {

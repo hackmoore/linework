@@ -90,6 +90,27 @@ export const ARROWHEADS = [
 ] as const;
 export type Arrowhead = (typeof ARROWHEADS)[number];
 
+/**
+ * Fixed points on a shape where a connector can attach: three on each side (start,
+ * centre, end, reading left to right or top to bottom). A connector end without one
+ * attaches automatically, to whichever side faces the other shape.
+ */
+export const EDGE_ANCHORS = [
+  "top-start",
+  "top",
+  "top-end",
+  "right-start",
+  "right",
+  "right-end",
+  "bottom-start",
+  "bottom",
+  "bottom-end",
+  "left-start",
+  "left",
+  "left-end",
+] as const;
+export type EdgeAnchor = (typeof EDGE_ANCHORS)[number];
+
 export const EDGE_ROUTINGS = ["straight", "elbow", "curved"] as const;
 export type EdgeRouting = (typeof EDGE_ROUTINGS)[number];
 
@@ -151,6 +172,9 @@ export const edgeSchema = z.object({
   /** Text beside each end, such as a multiplicity ("1", "0..*") or a role. */
   startLabel: z.string().max(100).optional(),
   endLabel: z.string().max(100).optional(),
+  /** Where each end attaches to its shape; absent means automatic. */
+  sourceAnchor: z.enum(EDGE_ANCHORS).optional(),
+  targetAnchor: z.enum(EDGE_ANCHORS).optional(),
   meta: metaSchema.optional(),
 });
 export type DiagramEdge = z.infer<typeof edgeSchema>;

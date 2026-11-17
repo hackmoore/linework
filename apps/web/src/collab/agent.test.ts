@@ -64,6 +64,20 @@ describe("agent commands", () => {
     expect(runAgentCommand(flowchart(), { op: "edit", upsert: { shapes: [] } })).toMatchObject({ ok: false });
   });
 
+  it("sets and clears where connector ends attach", () => {
+    const anchored = edited(flowchart(), {
+      op: "edit",
+      upsert: { edges: [{ id: "ab", sourceAnchor: "bottom-end" }] },
+    });
+    expect(anchored.edges[0]?.sourceAnchor).toBe("bottom-end");
+    const cleared = edited(anchored, { op: "edit", upsert: { edges: [{ id: "ab", sourceAnchor: null }] } });
+    expect(cleared.edges[0]).not.toHaveProperty("sourceAnchor");
+    expect(
+      runAgentCommand(flowchart(), { op: "edit", upsert: { edges: [{ id: "ab", sourceAnchor: "middle" }] } })
+        .ok,
+    ).toBe(false);
+  });
+
   it("refuses edits that would make the chart invalid", () => {
     const outcome = runAgentCommand(flowchart(), {
       op: "edit",

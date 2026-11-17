@@ -192,6 +192,11 @@ function runEdit(d: Diagram, cmd: Extract<AgentCommand, { op: "edit" }>): AgentO
       const current = typeof input.id === "string" ? existing.get(input.id) : undefined;
       // Existing items take only the fields given; new ones start from sensible defaults.
       const item = current ? { ...current, ...input } : newItem(d, name, input, placed);
+      // A null anchor clears it, so the connector end attaches automatically again.
+      if (name === "edges") {
+        if (item.sourceAnchor === null) delete item.sourceAnchor;
+        if (item.targetAnchor === null) delete item.targetAnchor;
+      }
       touched.push(item.id as string);
       return item as { id: string };
     });

@@ -75,6 +75,10 @@ Editing
   cloud, actor, icon, terminal (start/end), subroutine, table, class, initial, final,
   person. New shapes without x and y are
   placed beside the chart; run tidy afterwards to lay everything out.
+  A connector's "sourceAnchor" and "targetAnchor" fix where each end attaches: top-start,
+  top, top-end, right-start, right, right-end, bottom-start, bottom, bottom-end, left-start,
+  left or left-end ("start" is a quarter of the way along from the left or top). Leave
+  them out to attach automatically, or set one to null to go back to automatic.
   If an edit would make the chart invalid, nothing changes and the error says why.
 
 Examples

@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent, type ReactElement } from "react";
-import type { Diagram, DiagramNode } from "@linework/shared";
+import type { Diagram, DiagramEdge, DiagramNode, EdgeAnchor } from "@linework/shared";
 import { defaultSize } from "../diagram/factory";
 import { DiagramContent, visibleNodesInOrder } from "../render/DiagramSvg";
 import {
+  anchorAttachment,
+  anchorPoints,
+  boundaryPoint,
   boundsOf,
   center,
+  nearestAnchor,
   edgePoints,
   normalizeRect,
   pointsToPath,
@@ -30,6 +34,8 @@ const GRID = 10;
 const GUIDE_THRESHOLD = 6;
 const DRAG_THRESHOLD = 3;
 const MIN_NODE_SIZE = 20;
+/** Screen pixels within which a dragged connector end snaps to an attach point. */
+const ANCHOR_SNAP = 14;
 
 type Handle = "nw" | "ne" | "sw" | "se";
 
@@ -38,7 +44,22 @@ type Gesture =
   | { type: "move"; start: Point; origins: Map<string, Point>; started: boolean; guides: GuideLine[] }
   | { type: "resize"; nodeId: string; handle: Handle; origin: DiagramNode; start: Point; started: boolean }
   | { type: "marquee"; start: Point; current: Point; additive: boolean }
-  | { type: "connect"; sourceId: string; current: Point; targetId: string | null }
+  | {
+      type: "connect";
+      sourceId: string;
+      current: Point;
+      targetId: string | null;
+      targetAnchor: EdgeAnchor | null;
+    }
+  /** Dragging one end of a connector to another shape or attach point. */
+  | {
+      type: "reattach";
+      edgeId: string;
+      end: "source" | "target";
+      current: Point;
+      nodeId: string | null;
+      anchor: EdgeAnchor | null;
+    }
   | { type: "create"; start: Point; current: Point };
 
 const snap = (value: number, enabled: boolean): number => (enabled ? Math.round(value / GRID) * GRID : value);
@@ -159,13 +180,20 @@ export function Canvas(): ReactElement | null {
     }
 
     const target = event.target as Element;
+    const edgeEnd = target.closest("[data-edge-end]");
+    const endEdgeId = edgeEnd?.getAttribute("data-edge-end-id");
+    if (edgeEnd && endEdgeId) {
+      const end = edgeEnd.getAttribute("data-edge-end") === "source" ? "source" : "target";
+      updateGesture({ type: "reattach", edgeId: endEdgeId, end, current: p, nodeId: null, anchor: null });
+      return;
+    }
     const handle = target.closest("[data-handle]")?.getAttribute("data-handle");
     const handleNode = target.closest("[data-handle-node]")?.getAttribute("data-handle-node");
     if (handle && handleNode) {
       const node = current.nodes.find((n) => n.id === handleNode);
       if (!node) return;
       if (handle === "connect")
-        updateGesture({ type: "connect", sourceId: node.id, current: p, targetId: null });
+        updateGesture({ type: "connect", sourceId: node.id, current: p, targetId: null, targetAnchor: null });
       else
         updateGesture({
           type: "resize",
@@ -194,7 +222,8 @@ export function Canvas(): ReactElement | null {
 
     if (state.tool === "connect") {
       const source = nodeId ?? nodeAt(current, p)?.id;
-      if (source) updateGesture({ type: "connect", sourceId: source, current: p, targetId: null });
+      if (source)
+        updateGesture({ type: "connect", sourceId: source, current: p, targetId: null, targetAnchor: null });
       return;
     }
 
@@ -334,8 +363,29 @@ export function Canvas(): ReactElement | null {
         return;
       case "connect": {
         const current = state.diagram;
-        const hover = current ? nodeAt(current, p) : null;
-        updateGesture({ ...g, current: p, targetId: hover && hover.id !== g.sourceId ? hover.id : null });
+        const found = current ? nodeAt(current, p) : null;
+        const hover = found && found.id !== g.sourceId ? found : null;
+        updateGesture({
+          ...g,
+          current: p,
+          targetId: hover?.id ?? null,
+          targetAnchor: hover ? nearestAnchor(hover, p, ANCHOR_SNAP / state.viewport.zoom) : null,
+        });
+        return;
+      }
+      case "reattach": {
+        const current = state.diagram;
+        const edge = current?.edges.find((e) => e.id === g.edgeId);
+        const found = current ? nodeAt(current, p) : null;
+        // The other end's shape is allowed too, so an end can move round its own shape's sides.
+        const hover =
+          found && edge && found.id !== (g.end === "source" ? edge.target : edge.source) ? found : null;
+        updateGesture({
+          ...g,
+          current: p,
+          nodeId: hover?.id ?? null,
+          anchor: hover ? nearestAnchor(hover, p, ANCHOR_SNAP / state.viewport.zoom) : null,
+        });
         return;
       }
     }
@@ -356,8 +406,24 @@ export function Canvas(): ReactElement | null {
         return;
       }
       case "connect":
-        if (g.targetId) state.connect(g.sourceId, g.targetId);
+        if (g.targetId) state.connect(g.sourceId, g.targetId, { targetAnchor: g.targetAnchor ?? undefined });
         return;
+      case "reattach": {
+        const { nodeId, anchor, end, edgeId } = g;
+        if (!nodeId) return;
+        // Dropping on a shape away from its points attaches automatically ("loose").
+        state.commit((d) => ({
+          ...d,
+          edges: d.edges.map((e) =>
+            e.id === edgeId
+              ? end === "source"
+                ? { ...e, source: nodeId, sourceAnchor: anchor ?? undefined }
+                : { ...e, target: nodeId, targetAnchor: anchor ?? undefined }
+              : e,
+          ),
+        }));
+        return;
+      }
       case "create": {
         const kind = state.tool;
         if (kind === "select" || kind === "connect") return;
@@ -405,6 +471,17 @@ export function Canvas(): ReactElement | null {
   const single = selectedNodes.length === 1 ? selectedNodes[0] : undefined;
   const nodesById = new Map(diagram.nodes.map((n) => [n.id, n]));
   const handleSize = 9 / viewport.zoom;
+  const flow = flowDirection(diagram) ?? kindModel(diagram.chartType)?.loopFlow?.(diagram);
+  const axis = kindModel(diagram.chartType)?.elbowAxis?.(diagram);
+  // A single selected connector shows handles on its ends, for moving where they attach.
+  const endsEdge =
+    selection.edgeIds.length === 1 && selection.nodeIds.length === 0
+      ? diagram.edges.find((e) => e.id === selection.edgeIds[0])
+      : undefined;
+  const endsSource = endsEdge && nodesById.get(endsEdge.source);
+  const endsTarget = endsEdge && nodesById.get(endsEdge.target);
+  const endPoints =
+    endsEdge && endsSource && endsTarget ? edgePoints(endsEdge, endsSource, endsTarget, flow, axis) : null;
   const strokeScale = 1 / viewport.zoom;
   const cursor =
     gesture?.type === "pan" ? "grabbing" : spaceHeld ? "grab" : tool === "select" ? "default" : "crosshair";
@@ -434,15 +511,55 @@ export function Canvas(): ReactElement | null {
         strokeWidth={strokeScale}
       />
     );
+  } else if (gesture?.type === "reattach") {
+    const edge = diagram.edges.find((e) => e.id === gesture.edgeId);
+    const hover = gesture.nodeId ? nodesById.get(gesture.nodeId) : undefined;
+    const source = edge && nodesById.get(edge.source);
+    const target = edge && nodesById.get(edge.target);
+    if (edge && source && target) {
+      let points: Point[];
+      if (hover) {
+        const moved: DiagramEdge =
+          gesture.end === "source"
+            ? { ...edge, source: hover.id, sourceAnchor: gesture.anchor ?? undefined }
+            : { ...edge, target: hover.id, targetAnchor: gesture.anchor ?? undefined };
+        points = edgePoints(
+          moved,
+          gesture.end === "source" ? hover : source,
+          gesture.end === "source" ? target : hover,
+          flow,
+          axis,
+        );
+      } else {
+        // Over empty canvas: a straight line from the end that stays put to the pointer.
+        const fixed = gesture.end === "source" ? target : source;
+        const fixedAnchor = gesture.end === "source" ? edge.targetAnchor : edge.sourceAnchor;
+        const from = fixedAnchor
+          ? anchorAttachment(fixed, fixedAnchor).point
+          : boundaryPoint(fixed, gesture.current);
+        points = [from, gesture.current];
+      }
+      preview = (
+        <g>
+          {hover && <AnchorDots node={hover} hot={gesture.anchor} scale={strokeScale} />}
+          <path
+            className="canvas__connector-preview"
+            d={edgePath(hover ? edge.routing : "straight", points)}
+            strokeWidth={2 * strokeScale}
+          />
+        </g>
+      );
+    }
   } else if (gesture?.type === "connect") {
     const source = nodesById.get(gesture.sourceId);
     const target = gesture.targetId ? nodesById.get(gesture.targetId) : undefined;
     if (source) {
       const points = target
-        ? edgePoints({ routing: "straight" }, source, target)
+        ? edgePoints({ routing: "straight", targetAnchor: gesture.targetAnchor ?? undefined }, source, target)
         : previewPoints(source, gesture.current);
       preview = (
         <g>
+          {target && <AnchorDots node={target} hot={gesture.targetAnchor} scale={strokeScale} />}
           {target && (
             <rect
               className="canvas__drop-target"
@@ -542,6 +659,29 @@ export function Canvas(): ReactElement | null {
                 />
               );
             })}
+
+          {endsEdge && endPoints && !gesture && (
+            <g>
+              {(["source", "target"] as const).map((end) => {
+                const point = end === "source" ? endPoints[0] : endPoints[endPoints.length - 1];
+                if (!point) return null;
+                return (
+                  <circle
+                    key={end}
+                    data-edge-end={end}
+                    data-edge-end-id={endsEdge.id}
+                    className="canvas__edge-end"
+                    cx={point.x}
+                    cy={point.y}
+                    r={6 * strokeScale}
+                    strokeWidth={2 * strokeScale}
+                  >
+                    <title>Drag onto a point on any shape to attach this end there</title>
+                  </circle>
+                );
+              })}
+            </g>
+          )}
 
           {selectedNodes.map((node) => (
             <rect
@@ -766,6 +906,32 @@ function RemoteCursors({
             </g>
           )}
         </g>
+      ))}
+    </g>
+  );
+}
+
+/** The twelve attach points of a shape, shown while dragging a connector end over it. */
+function AnchorDots({
+  node,
+  hot,
+  scale,
+}: {
+  node: DiagramNode;
+  hot: EdgeAnchor | null;
+  scale: number;
+}): ReactElement {
+  return (
+    <g pointerEvents="none">
+      {anchorPoints(node).map(({ anchor, point }) => (
+        <circle
+          key={anchor}
+          className={`canvas__anchor${anchor === hot ? " canvas__anchor--hot" : ""}`}
+          cx={point.x}
+          cy={point.y}
+          r={(anchor === hot ? 5.5 : 4) * scale}
+          strokeWidth={1.5 * scale}
+        />
       ))}
     </g>
   );

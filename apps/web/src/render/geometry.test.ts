@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import { SHAPE_KINDS } from "@linework/shared";
 import { createNode } from "../diagram/factory";
 import {
+  anchorAttachment,
+  anchorPoints,
+  nearestAnchor,
   boundaryPoint,
   boundsOf,
   edgePoints,
@@ -100,5 +103,67 @@ describe("helpers", () => {
     expect(seedFrom("abc")).toBe(seedFrom("abc"));
     expect(seedFrom("abc")).not.toBe(seedFrom("abd"));
     expect(seedFrom("")).toBeGreaterThan(0);
+  });
+});
+
+describe("connector anchors", () => {
+  const box = createNode("rectangle", 50, 25, { id: "box", width: 100, height: 50 });
+  const far = createNode("rectangle", 350, 225, { id: "far", width: 100, height: 50 });
+
+  it("puts three points on each side at a quarter, half and three quarters", () => {
+    expect(anchorAttachment(box, "top-start").point).toEqual({ x: 25, y: 0 });
+    expect(anchorAttachment(box, "top").point).toEqual({ x: 50, y: 0 });
+    expect(anchorAttachment(box, "top-end").point).toEqual({ x: 75, y: 0 });
+    expect(anchorAttachment(box, "right-start").point).toEqual({ x: 100, y: 12.5 });
+    expect(anchorAttachment(box, "bottom").point).toEqual({ x: 50, y: 50 });
+    expect(anchorAttachment(box, "left-end").point).toEqual({ x: 0, y: 37.5 });
+    expect(anchorAttachment(box, "left").dir).toEqual({ x: -1, y: 0 });
+    expect(anchorPoints(box)).toHaveLength(12);
+  });
+
+  it("puts points on the outline of round shapes", () => {
+    const circle = createNode("ellipse", 50, 50, { width: 100, height: 100 });
+    const p = anchorAttachment(circle, "top-start").point;
+    expect(Math.hypot(p.x - 50, p.y - 50)).toBeCloseTo(50);
+  });
+
+  it("snaps to the nearest point within the radius only", () => {
+    expect(nearestAnchor(box, { x: 27, y: 3 }, 10)).toBe("top-start");
+    expect(nearestAnchor(box, { x: 50, y: 25 }, 10)).toBeNull();
+  });
+
+  it("starts and ends anchored connectors at their points", () => {
+    for (const routing of ["straight", "elbow", "curved"] as const) {
+      const points = edgePoints(
+        { routing, sourceAnchor: "bottom-end", targetAnchor: "left-start" },
+        box,
+        far,
+      );
+      expect(points[0]).toEqual({ x: 75, y: 50 });
+      expect(points.at(-1)).toEqual({ x: 300, y: 212.5 });
+    }
+  });
+
+  it("routes elbows straight out of each side and only at right angles", () => {
+    const points = edgePoints({ routing: "elbow", sourceAnchor: "top", targetAnchor: "top" }, box, far);
+    expect(points[1]?.x).toBe(50);
+    expect(points[1]?.y).toBeLessThan(0);
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1];
+      const b = points[i];
+      expect(a && b && (a.x === b.x || a.y === b.y)).toBe(true);
+    }
+  });
+
+  it("attaches the free end of a half-anchored connector to the side facing it", () => {
+    const points = edgePoints({ routing: "elbow", sourceAnchor: "right" }, box, far);
+    expect(points[0]).toEqual({ x: 100, y: 25 });
+    expect(points.at(-1)).toEqual({ x: 350, y: 200 });
+  });
+
+  it("leaves connectors without anchors as they were", () => {
+    expect(edgePoints({ routing: "straight" }, box, far)).toEqual(
+      edgePoints({ routing: "straight", sourceAnchor: undefined }, box, far),
+    );
   });
 });

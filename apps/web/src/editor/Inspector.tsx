@@ -1,6 +1,7 @@
 import type { ReactElement, ReactNode } from "react";
 import {
   ARROWHEADS,
+  EDGE_ANCHORS,
   EDGE_ROUTINGS,
   SHAPE_KINDS,
   STROKE_PATTERNS,
@@ -8,6 +9,7 @@ import {
   type Diagram,
   type DiagramEdge,
   type DiagramNode,
+  type EdgeAnchor,
 } from "@linework/shared";
 import { DIAGRAM_STYLES, STYLE_IDS } from "../diagram/styles";
 import { ICONS } from "../library/icons";
@@ -571,6 +573,90 @@ function LayersSection({ diagram }: { diagram: Diagram }): ReactElement {
   );
 }
 
+/** Readable name for an anchor, such as "Top left" or "Right bottom". */
+export function anchorName(anchor: EdgeAnchor): string {
+  const [side = "", pos] = anchor.split("-");
+  const horizontal = side === "top" || side === "bottom";
+  const along =
+    pos === "start"
+      ? horizontal
+        ? "left"
+        : "top"
+      : pos === "end"
+        ? horizontal
+          ? "right"
+          : "bottom"
+        : "centre";
+  return `${side.charAt(0).toUpperCase()}${side.slice(1)} ${along}`;
+}
+
+/** Where along each side an anchor dot sits in the picker, as percentages. */
+function anchorSpot(anchor: EdgeAnchor): { left: string; top: string } {
+  const [side, pos] = anchor.split("-");
+  const along = pos === "start" ? 25 : pos === "end" ? 75 : 50;
+  if (side === "top") return { left: `${String(along)}%`, top: "0%" };
+  if (side === "bottom") return { left: `${String(along)}%`, top: "100%" };
+  if (side === "left") return { left: "0%", top: `${String(along)}%` };
+  return { left: "100%", top: `${String(along)}%` };
+}
+
+/** Pick one of the twelve points where a connector end attaches, or automatic. */
+function AnchorPicker({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  /** Null means automatic; undefined means the selected connectors differ. */
+  value: EdgeAnchor | null | undefined;
+  onChange: (anchor: EdgeAnchor | undefined) => void;
+}): ReactElement {
+  return (
+    <div className="inspector__field">
+      <span className="inspector__label">{label}</span>
+      <div className="anchor-picker" role="radiogroup" aria-label={label}>
+        <div className="anchor-picker__box">
+          {EDGE_ANCHORS.map((anchor) => (
+            <button
+              key={anchor}
+              type="button"
+              role="radio"
+              aria-checked={value === anchor}
+              aria-label={anchorName(anchor)}
+              title={anchorName(anchor)}
+              className={`anchor-picker__dot${value === anchor ? " anchor-picker__dot--active" : ""}`}
+              style={anchorSpot(anchor)}
+              onClick={() => {
+                onChange(value === anchor ? undefined : anchor);
+              }}
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          role="radio"
+          aria-checked={value === null}
+          className={`btn btn--sm anchor-picker__auto${value === null ? " anchor-picker__auto--active" : ""}`}
+          title="Attach to whichever side faces the other shape"
+          onClick={() => {
+            onChange(undefined);
+          }}
+        >
+          Auto
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function commonAnchor(
+  edges: readonly DiagramEdge[],
+  key: "sourceAnchor" | "targetAnchor",
+): EdgeAnchor | null | undefined {
+  const first = edges[0]?.[key] ?? null;
+  return edges.every((e) => (e[key] ?? null) === first) ? first : undefined;
+}
+
 function EdgeInspector({ edges }: { edges: readonly DiagramEdge[] }): ReactElement {
   const { updateEdges, deleteSelection } = useEditor.getState();
   const ids = edges.map((e) => e.id);
@@ -633,6 +719,23 @@ function EdgeInspector({ edges }: { edges: readonly DiagramEdge[] }): ReactEleme
           }}
         />
       </div>
+      <div className="inspector__row">
+        <AnchorPicker
+          label="Attach start"
+          value={commonAnchor(edges, "sourceAnchor")}
+          onChange={(sourceAnchor) => {
+            update({ sourceAnchor });
+          }}
+        />
+        <AnchorPicker
+          label="Attach end"
+          value={commonAnchor(edges, "targetAnchor")}
+          onChange={(targetAnchor) => {
+            update({ targetAnchor });
+          }}
+        />
+      </div>
+      <p className="inspector__hint">Or drag a selected connector&apos;s end onto a point on any shape.</p>
       <div className="inspector__actions">
         <button type="button" className="btn btn--sm btn--danger" onClick={deleteSelection}>
           Delete

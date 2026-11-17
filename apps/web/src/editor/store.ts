@@ -83,7 +83,11 @@ export interface EditorState {
     cy: number,
     overrides?: Partial<Omit<DiagramNode, "kind">>,
   ) => string;
-  readonly connect: (source: string, target: string) => string | null;
+  readonly connect: (
+    source: string,
+    target: string,
+    anchors?: Pick<DiagramEdge, "sourceAnchor" | "targetAnchor">,
+  ) => string | null;
   readonly updateNodes: (ids: readonly string[], patch: Partial<Omit<DiagramNode, "id">>) => void;
   readonly updateEdges: (
     ids: readonly string[],
@@ -292,7 +296,7 @@ export const useEditor = create<EditorState>()((set, get) => ({
     return node.id;
   },
 
-  connect(source, target) {
+  connect(source, target, anchors = {}) {
     const { diagram } = get();
     if (!diagram || source === target) return null;
     const ids = new Set(diagram.nodes.map((n) => n.id));
@@ -306,7 +310,12 @@ export const useEditor = create<EditorState>()((set, get) => ({
           ? { arrowEnd: "none" }
           : (kindModel(diagram.chartType)?.edgeDefaults?.(diagram, source, target) ?? {}),
     );
-    get().commit((d) => ({ ...d, edges: [...d.edges, edge] }));
+    const anchored = {
+      ...edge,
+      ...(anchors.sourceAnchor ? { sourceAnchor: anchors.sourceAnchor } : {}),
+      ...(anchors.targetAnchor ? { targetAnchor: anchors.targetAnchor } : {}),
+    };
+    get().commit((d) => ({ ...d, edges: [...d.edges, anchored] }));
     set({ selection: { ...EMPTY_SELECTION, edgeIds: [edge.id] } });
     return edge.id;
   },
