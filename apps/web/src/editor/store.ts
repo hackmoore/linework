@@ -406,7 +406,14 @@ export const useEditor = create<EditorState>()((set, get) => ({
     const ids = new Set(get().selection.nodeIds);
     if (ids.size === 0) return;
     get().commit((d) => {
-      const picked = d.nodes.filter((n) => ids.has(n.id));
+      // Sending to back also puts shapes behind the connectors; bringing to front undoes that.
+      const picked = d.nodes
+        .filter((n) => ids.has(n.id))
+        .map((n) => {
+          if (direction === "back") return { ...n, behindLines: true };
+          const { behindLines: _behind, ...rest } = n;
+          return rest;
+        });
       const rest = d.nodes.filter((n) => !ids.has(n.id));
       return { ...d, nodes: direction === "front" ? [...rest, ...picked] : [...picked, ...rest] };
     });

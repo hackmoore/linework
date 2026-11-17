@@ -915,8 +915,10 @@ export function DiagramContent({ diagram, editingNodeId = null }: DiagramContent
   const style = getStyle(diagram.styleId);
   const visibleNodes = useMemo(() => visibleNodesInOrder(diagram), [diagram]);
   const nodesById = useMemo(() => new Map(visibleNodes.map((n) => [n.id, n])), [visibleNodes]);
-  const containers = visibleNodes.filter((n) => n.kind === "container");
-  const others = visibleNodes.filter((n) => n.kind !== "container");
+  // Containers and shapes sent to back go under the connectors; everything else over them.
+  const isBehind = (n: DiagramNode): boolean => n.kind === "container" || n.behindLines === true;
+  const containers = visibleNodes.filter(isBehind);
+  const others = visibleNodes.filter((n) => !isBehind(n));
   const labelBackground = diagram.background === "transparent" ? "#ffffff" : diagram.background;
   const lanes = useMemo(() => laneBands(diagram), [diagram]);
   const vertical = diagram.flowchart?.direction !== "LR";

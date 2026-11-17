@@ -86,6 +86,18 @@ describe("editor store", () => {
     expect(diagram().nodes.map((n) => n.id)).toEqual([b, a]);
   });
 
+  it("sends shapes behind connectors and brings them back in front", () => {
+    const a = state().addNode("rectangle", 0, 0);
+    const b = state().addNode("rectangle", 10, 10);
+    state().select({ nodeIds: [b] });
+    state().reorderSelection("back");
+    expect(diagram().nodes.map((n) => n.id)).toEqual([b, a]);
+    expect(diagram().nodes[0]?.behindLines).toBe(true);
+    state().reorderSelection("front");
+    expect(diagram().nodes.map((n) => n.id)).toEqual([a, b]);
+    expect(diagram().nodes[1]).not.toHaveProperty("behindLines");
+  });
+
   it("ignores no-op title changes", () => {
     const before = state().past.length;
     state().setTitle("Test");
